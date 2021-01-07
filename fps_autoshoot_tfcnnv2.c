@@ -24,6 +24,26 @@
 #include "TFCNNv2.h"
 
 #define uint unsigned int
+#define SCAN_AREA 30
+
+const uint r0 = SCAN_AREA;  // dimensions of sample image square
+const uint r2 = r0*r0;      // total pixels in square
+const uint r2i = r2*3;      // total inputs to neural net pixels*channels
+const uint rd2 = r0/2;      // total pixels divided by two
+uint x=0, y=0;
+
+float input[r2i] = {0};
+    double r[r2] = {0};
+    double g[r2] = {0};
+    double b[r2] = {0};
+
+Display *d;
+int si;
+Window twin;
+GC gc = 0;
+
+network net;
+
 
 /***************************************************
    ~~ Utils
@@ -39,12 +59,6 @@ int key_is_pressed(KeySym ks)
     XCloseDisplay(dpy);
     return isPressed;
 }
-
-// void playTone()
-// {
-//     if(system("/usr/bin/aplay --quiet /usr/share/sounds/a.wav") <= 0)
-//         sleep(1);
-// }
 
 void speakS(const char* text)
 {
@@ -70,41 +84,6 @@ void speakF(const double f)
         sleep(1);
 }
 
-int isFocus(const Window w)
-{
-    // open display 0
-    Display *d = XOpenDisplay((char *) NULL);
-    if(d == NULL)
-        return 0;
-
-    // get default screen
-    int si = XDefaultScreen(d);
-
-    // mouse event
-    XEvent event;
-    memset(&event, 0x00, sizeof(event));
-
-    // find target window
-    XQueryPointer(d, RootWindow(d, si), &event.xbutton.root, &event.xbutton.window, &event.xbutton.x_root, &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
-    event.xbutton.subwindow = event.xbutton.window;
-    while(event.xbutton.subwindow)
-    {
-        event.xbutton.window = event.xbutton.subwindow;
-        XQueryPointer(d, event.xbutton.window, &event.xbutton.root, &event.xbutton.subwindow, &event.xbutton.x_root, &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
-    }
-
-    // not the right window?
-    if(event.xbutton.window != w)
-    {
-        XCloseDisplay(d);
-        return 0;
-    }
-
-    // done
-    XCloseDisplay(d);
-    return 1;
-}
-
 Window getWindow()
 {
     Display *d = XOpenDisplay((char *) NULL);
@@ -125,7 +104,98 @@ Window getWindow()
     return ret;
 }
 
-network net;
+void processScanArea(Window w)
+{
+    // get image block
+    XImage *img = XGetImage(d, w, x-rd2, y-rd2, r0, r0, AllPlanes, XYPixmap);
+    if(img == NULL)
+        return;
+
+    // colour map
+    const Colormap map = XDefaultColormap(d, si);
+
+    // extract colour information
+    double rh = 0, rl = 99999999999999, rm = 0;
+    double gh = 0, gl = 99999999999999, gm = 0;
+    double bh = 0, bl = 99999999999999, bm = 0;
+    int i = 0;
+    for(int y = 0; y < r0; y++)
+    {
+        for(int x = 0; x < r0; x++)
+        {
+            XColor c;
+            c.pixel = XGetPixel(img, x, y);
+            XQueryColor(d, map, &c);
+
+            r[i] = (double)c.red;
+            g[i] = (double)c.green;
+            b[i] = (double)c.blue;
+
+            if(r[i] > rh){rh = r[i];}
+            if(r[i] < rl){rl = r[i];}
+            rm += r[i];
+
+            if(g[i] > gh){gh = g[i];}
+            if(g[i] < gl){gl = g[i];}
+            gm += g[i];
+
+            if(b[i] > bh){bh = b[i];}
+            if(b[i] < bl){bl = b[i];}
+            bm += b[i];
+
+            i++;
+        }
+    }
+
+    // free image block
+    XFree(img);
+
+
+    /////////////////
+    // 0-1 normalised
+
+    // for(uint i = 0, i2 = 0; i < r2i; i += 3, i2++)
+    // {
+    //     input[i]   = r[i2] / 65535.0;
+    //     input[i+1] = g[i2] / 65535.0;
+    //     input[i+2] = b[i2] / 65535.0;
+    // }
+
+
+    /////////////////
+    // mean normalised
+
+    rm /= r2;
+    gm /= r2;
+    bm /= r2;
+
+    const double rmd = rh-rl;
+    const double gmd = gh-gl;
+    const double bmd = bh-bl;
+
+    for(uint i = 0, i2 = 0; i < r2i; i += 3, i2++)
+    {
+        input[i]   = ((r[i2]-rm)+1e-7) / (rmd+1e-7);
+        input[i+1] = ((g[i2]-gm)+1e-7) / (gmd+1e-7);
+        input[i+2] = ((b[i2]-bm)+1e-7) / (bmd+1e-7);
+    }
+
+
+    /////////////////
+    // -1 to 1 normalised
+
+    // const double rmd = rh-rl;
+    // const double gmd = gh-gl;
+    // const double bmd = bh-bl;
+
+    // for(uint i = 0, i2 = 0; i < r2i; i += 3, i2++)
+    // {
+    //     input[i]   = ((r[i2]-rl)+1e-7) / (rmd+1e-7);
+    //     input[i+1] = ((g[i2]-gl)+1e-7) / (gmd+1e-7);
+    //     input[i+2] = ((b[i2]-bl)+1e-7) / (bmd+1e-7);
+    // }
+}
+
 void sigint_handler(int sig_num) 
 {
     static int m_qe = 0;
@@ -153,17 +223,7 @@ int main(int argc, char *argv[])
     printf("G = Get activation for reticule area.\n");
     printf("Q = Train on reticule area.\n");
     printf("E = Un-Train on reticule area.\n");
-    printf("\n");
-    printf("Please input reticule scan area: \n");
-
-    // uint rsa = 30;
-    // char in[32] = {0};
-    // fgets(in, 32, stdin);
-    // if(in[0] != 0x0A)
-    // {
-    //     rsa = atoi(in);
-    // }
-    // printf("\n%u has been set.\n\n", rsa);
+    printf("\n\n");
 
     //
 
@@ -171,43 +231,31 @@ int main(int argc, char *argv[])
 
     //
 
-    const uint r0 = 30;     // dimensions of sample image square
-    const uint r2 = r0*r0;  // total pixels in square
-    const uint r2i = r2*3;  // total inputs to neural net pixels*channels
-    const uint rd2 = r0/2;  // total pixels divided by two
-
-    //
-
-    Display *d;
-    int si;
-    Window twin;
-
-    //
-
-    createNetwork(&net, WEIGHT_INIT_UNIFORM_GLOROT, r2i, 3, 512, 1);
+    createNetwork(&net, WEIGHT_INIT_UNIFORM_GLOROT, r2i, 3, 128, 1);
     setOptimiser(&net, OPTIM_NESTEROV);
     setActivator(&net, ELLIOT);
     setLearningRate(&net, 0.01);
 
-    setUnitDropout(&net, 0.3);
+    setUnitDropout(&net, 0.4);
     setMomentum(&net, 0.1);
     // setTargetMin(&net, 0.1);
     // setTargetMax(&net, 0.9);
 
     //
+
     if(argc == 2 && strcmp(argv[1], "new") == 0)
     {
-        printf("Starting with no training data.\n\n");
+        printf("!! Starting with no training data.\n\n");
     }
     else
     {
         if(loadNetwork(&net, "weights.dat") == 0)
         {
-            printf("Loaded network weights.\n\n");
+            printf(">> Loaded network weights.\n\n");
         }
         else
         {
-            printf("Starting with no training data.\n\n");
+            printf("!! Starting with no training data.\n\n");
         }
     }
 
@@ -216,24 +264,51 @@ int main(int argc, char *argv[])
     XEvent event;
     memset(&event, 0x00, sizeof(event));
     
-    uint x=0, y=0;
     uint enable = 0;
     uint autofire = 0;
+    uint crosshair = 0;
 
     //
     
     while(1)
     {
         // loop every 10 ms (1,000 microsecond = 1 millisecond)
-        usleep(10000);
+        usleep(1000);
 
         // input toggle
         if(key_is_pressed(XK_Control_L) && key_is_pressed(XK_Alt_L))
         {
             if(enable == 0)
             {
+                // open display 0
+                d = XOpenDisplay((char *) NULL);
+                if(d == NULL)
+                    continue;
+
+                // get default screen
+                si = XDefaultScreen(d);
+
+                // get graphics context
+                gc = DefaultGC(d, si);
+
+                // get window
                 twin = getWindow();
-                x = 0, y = 0;
+
+                // get center window point (x & y)
+                XWindowAttributes attr;
+                XGetWindowAttributes(d, twin, &attr);
+                x = attr.width/2;
+                y = attr.height/2;
+                printf("CSET: %ix%i\n", x, y);
+
+                // set mouse event
+                memset(&event, 0x00, sizeof(event));
+                event.type = ButtonPress;
+                event.xbutton.button = Button1;
+                event.xbutton.same_screen = True;
+                event.xbutton.subwindow = twin;
+                event.xbutton.window = twin;
+
                 enable = 1;
                 printf("\a\n");
                 usleep(300000);
@@ -243,152 +318,15 @@ int main(int argc, char *argv[])
             else
             {
                 enable = 0;
+                XCloseDisplay(d);
                 printf("AUTO-SHOOT: OFF\n");
                 speakS("off");
             }
         }
         
         // toggle bot on/off
-        if(enable == 1 && isFocus(twin) == 1)
+        if(enable == 1)
         {
-            // open display 0
-            d = XOpenDisplay((char *) NULL);
-            if(d == NULL)
-                continue;
-
-            // get default screen
-            si = XDefaultScreen(d);
-            
-            // reset mouse event
-            memset(&event, 0x00, sizeof(event));
-
-            // ready to press down mouse 1
-            event.type = ButtonPress;
-            event.xbutton.button = Button1;
-            event.xbutton.same_screen = True;
-            
-            // find target window
-            XQueryPointer(d, RootWindow(d, si), &event.xbutton.root, &event.xbutton.window, &event.xbutton.x_root, &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
-            event.xbutton.subwindow = event.xbutton.window;
-            while(event.xbutton.subwindow)
-            {
-                event.xbutton.window = event.xbutton.subwindow;
-                XQueryPointer(d, event.xbutton.window, &event.xbutton.root, &event.xbutton.subwindow, &event.xbutton.x_root, &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
-            }
-
-            // get center window point (x & y)
-            if(x == 0 && y == 0)
-            {
-                XWindowAttributes attr;
-                XGetWindowAttributes(d, event.xbutton.window, &attr);
-                x = attr.width/2;
-                y = attr.height/2;
-                printf("CSET: %ix%i\n", x, y);
-            }
-
-            // get image block
-            XImage *img = XGetImage(d, event.xbutton.window, x-rd2, y-rd2, r0, r0, AllPlanes, XYPixmap);
-            if(img == NULL)
-            {
-                XCloseDisplay(d);
-                continue;
-            }
-
-            // colour map
-            const Colormap map = XDefaultColormap(d, si);
-
-            // extract colour information
-            double rh = 0, rl = 99999999999999, rm = 0;
-            double gh = 0, gl = 99999999999999, gm = 0;
-            double bh = 0, bl = 99999999999999, bm = 0;
-            double r[r2] = {0};
-            double g[r2] = {0};
-            double b[r2] = {0};
-            int i = 0;
-            for(int y = 0; y < r0; y++)
-            {
-                for(int x = 0; x < r0; x++)
-                {
-                    XColor c;
-                    c.pixel = XGetPixel(img, x, y);
-                    XQueryColor(d, map, &c);
-
-                    r[i] = (double)c.red;
-                    g[i] = (double)c.green;
-                    b[i] = (double)c.blue;
-
-                    if(r[i] > rh){rh = r[i];}
-                    if(r[i] < rl){rl = r[i];}
-                    rm += r[i];
-
-                    if(g[i] > gh){gh = g[i];}
-                    if(g[i] < gl){gl = g[i];}
-                    gm += g[i];
-
-                    if(b[i] > bh){bh = b[i];}
-                    if(b[i] < bl){bl = b[i];}
-                    bm += b[i];
-
-                    i++;
-                }
-            }
-
-            // free image block
-            XFree(img);
-
-            // draw sample outline
-            GC gc = DefaultGC(d, si);
-            XSetForeground(d, gc, 65280);
-            XDrawRectangle(d, event.xbutton.window, gc, x-rd2, y-rd2, r0, r0);
-            XSetForeground(d, gc, 0);
-            XDrawRectangle(d, event.xbutton.window, gc, x-rd2-1, y-rd2-1, r0+2, r0+2);
-
-            // calculate mean normalised input buffer
-            float input[r2i] = {0};
-
-            /////////////////
-            // 0-1 normalised
-
-            // for(uint i = 0, i2 = 0; i < r2i; i += 3, i2++)
-            // {
-            //     input[i]   = r[i2] / 65535.0;
-            //     input[i+1] = g[i2] / 65535.0;
-            //     input[i+2] = b[i2] / 65535.0;
-            // }
-
-            /////////////////
-            // mean normalised
-
-            rm /= r2;
-            gm /= r2;
-            bm /= r2;
-
-            const double rmd = rh-rl;
-            const double gmd = gh-gl;
-            const double bmd = bh-bl;
-
-            for(uint i = 0, i2 = 0; i < r2i; i += 3, i2++)
-            {
-                input[i]   = ((r[i2]-rm)+1e-7) / (rmd+1e-7);
-                input[i+1] = ((g[i2]-gm)+1e-7) / (gmd+1e-7);
-                input[i+2] = ((b[i2]-bm)+1e-7) / (bmd+1e-7);
-            }
-
-            /////////////////
-            // -1 to 1 normalised
-
-            // const double rmd = rh-rl;
-            // const double gmd = gh-gl;
-            // const double bmd = bh-bl;
-
-            // for(uint i = 0, i2 = 0; i < r2i; i += 3, i2++)
-            // {
-            //     input[i]   = ((r[i2]-rl)+1e-7) / (rmd+1e-7);
-            //     input[i+1] = ((g[i2]-gl)+1e-7) / (gmd+1e-7);
-            //     input[i+2] = ((b[i2]-bl)+1e-7) / (bmd+1e-7);
-            // }
-
-
             // detect when pressed
             if(key_is_pressed(XK_T))
             {
@@ -405,10 +343,29 @@ int main(int argc, char *argv[])
                     speakS("af off");
                 }
             }
+            
+            // crosshair toggle
+            if(key_is_pressed(XK_P))
+            {
+                if(crosshair == 0)
+                {
+                    crosshair = 1;
+                    printf("CROSSHAIR: ON\n");
+                    speakS("cx on");
+                }
+                else
+                {
+                    crosshair = 0;
+                    printf("CROSSHAIR: OFF\n");
+                    speakS("cx off");
+                }
+            }
 
             // print input data
             if(key_is_pressed(XK_C))
             {
+                processScanArea(twin);
+
                 // per channel
                 printf("R: ");
                 for(uint i = 0; i < r2; i++)
@@ -436,9 +393,12 @@ int main(int argc, char *argv[])
             
             if(autofire == 1) // left mouse trigger on activation
             {
+                processScanArea(twin);
                 if(processNetwork(&net, &input[0], NO_LEARN) > 0.7)
                 {
                     // fire mouse down
+                    event.type = ButtonPress;
+                    event.xbutton.state = 0;
                     XSendEvent(d, PointerWindow, True, 0xfff, &event);
                     XFlush(d);
                     
@@ -454,33 +414,67 @@ int main(int argc, char *argv[])
             }
             else if(key_is_pressed(XK_G)) // print activation when pressed
             {
+                processScanArea(twin);
                 const float ret = processNetwork(&net, &input[0], NO_LEARN);
                 printf("A: %f\n", ret);
                 if(ret > 0.7)
                 {
                     XSetForeground(d, gc, 65280);
-                    XFillRectangle(d, event.xbutton.window, gc, x-rd2+1, y-rd2+1, r0-1, r0-1);
+                    XDrawRectangle(d, event.xbutton.window, gc, x-rd2-1, y-rd2-1, r0+2, r0+2);
+                    XSetForeground(d, gc, 0);
+                    XDrawRectangle(d, event.xbutton.window, gc, x-rd2-2, y-rd2-2, r0+4, r0+4);
+                    XFlush(d);
                 }
                 else
                 {
                     XSetForeground(d, gc, 16711680);
-                    XFillRectangle(d, event.xbutton.window, gc, x-rd2+1, y-rd2+1, r0-1, r0-1);
+                    XDrawRectangle(d, event.xbutton.window, gc, x-rd2-1, y-rd2-1, r0+2, r0+2);
+                    XSetForeground(d, gc, 0);
+                    XDrawRectangle(d, event.xbutton.window, gc, x-rd2-2, y-rd2-2, r0+4, r0+4);
+                    XFlush(d);
                 }                
             }
             else
             {
                 if(key_is_pressed(XK_Q)) // train when pressed
                 {
+                    processScanArea(twin);
                     processNetwork(&net, &input[0], LEARN_MAX);
+
+                    // draw sample outline
+                    XSetForeground(d, gc, 65280);
+                    XDrawRectangle(d, event.xbutton.window, gc, x-rd2-1, y-rd2-1, r0+2, r0+2);
+                    XSetForeground(d, gc, 0);
+                    XDrawRectangle(d, event.xbutton.window, gc, x-rd2-2, y-rd2-2, r0+4, r0+4);
+                    XFlush(d);
                 }
                 else if(key_is_pressed(XK_E)) // untrain when pressed
                 {
+                    processScanArea(twin);
                     processNetwork(&net, &input[0], LEARN_MIN);
+
+                    // draw sample outline
+                    XSetForeground(d, gc, 16711680);
+                    XDrawRectangle(d, event.xbutton.window, gc, x-rd2-1, y-rd2-1, r0+2, r0+2);
+                    XSetForeground(d, gc, 0);
+                    XDrawRectangle(d, event.xbutton.window, gc, x-rd2-2, y-rd2-2, r0+4, r0+4);
+                    XFlush(d);
                 }
             }
 
-            //Close the display
-            XCloseDisplay(d);
+            if(crosshair == 1)
+            {
+                //processScanArea(twin);
+                XSetForeground(d, gc, 0);
+                XDrawPoint(d, event.xbutton.window, gc, x, y);
+                XSetForeground(d, gc, 65280);
+                XDrawRectangle(d, event.xbutton.window, gc, x-1, y-1, 2, 2);
+                XSetForeground(d, gc, 0);
+                XDrawRectangle(d, event.xbutton.window, gc, x-2, y-2, 4, 4);
+                XFlush(d);
+            }
+
+        ///
         }
     }
 
