@@ -23,6 +23,8 @@
 
 #include "TFCNNv2.h"
 
+#define uint unsigned int
+
 /***************************************************
    ~~ Utils
 */
@@ -182,12 +184,12 @@ int main(int argc, char *argv[])
 
     //
 
-    createNetwork(&net, WEIGHT_INIT_UNIFORM_GLOROT, r2i, 3, 256, 1);
+    createNetwork(&net, WEIGHT_INIT_UNIFORM_GLOROT, r2i, 3, 512, 1);
     setOptimiser(&net, OPTIM_NESTEROV);
     setActivator(&net, ELLIOT);
-    setLearningRate(&net, 0.3);
+    setLearningRate(&net, 0.01);
 
-    setUnitDropout(&net, 0.13);
+    setUnitDropout(&net, 0.3);
     setMomentum(&net, 0.1);
     // setTargetMin(&net, 0.1);
     // setTargetMax(&net, 0.9);
@@ -214,9 +216,9 @@ int main(int argc, char *argv[])
     XEvent event;
     memset(&event, 0x00, sizeof(event));
     
-    unsigned int x=0, y=0;
-    unsigned int enable = 0;
-    unsigned int autofire = 0;
+    uint x=0, y=0;
+    uint enable = 0;
+    uint autofire = 0;
 
     //
     
