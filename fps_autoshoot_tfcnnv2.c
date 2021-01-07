@@ -340,6 +340,8 @@ int main(int argc, char *argv[])
             GC gc = DefaultGC(d, si);
             XSetForeground(d, gc, 65280);
             XDrawRectangle(d, event.xbutton.window, gc, x-rd2, y-rd2, r0, r0);
+            XSetForeground(d, gc, 0);
+            XDrawRectangle(d, event.xbutton.window, gc, x-rd2-1, y-rd2-1, r0+2, r0+2);
 
             // calculate mean normalised input buffer
             float input[r2i] = {0};
@@ -452,7 +454,18 @@ int main(int argc, char *argv[])
             }
             else if(key_is_pressed(XK_G)) // print activation when pressed
             {
-                printf("A: %f\n", processNetwork(&net, &input[0], NO_LEARN));
+                const float ret = processNetwork(&net, &input[0], NO_LEARN);
+                printf("A: %f\n", ret);
+                if(ret > 0.7)
+                {
+                    XSetForeground(d, gc, 65280);
+                    XFillRectangle(d, event.xbutton.window, gc, x-rd2+1, y-rd2+1, r0-1, r0-1);
+                }
+                else
+                {
+                    XSetForeground(d, gc, 16711680);
+                    XFillRectangle(d, event.xbutton.window, gc, x-rd2+1, y-rd2+1, r0-1, r0-1);
+                }                
             }
             else
             {
