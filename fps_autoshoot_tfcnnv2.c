@@ -313,14 +313,14 @@ int main(int argc, char *argv[])
                 enable = 1;
                 printf("\a\n");
                 usleep(300000);
-                printf("AUTO-SHOOT: ON\n");
+                printf("BOT: ON\n");
                 speakS("on");
             }
             else
             {
                 enable = 0;
                 XCloseDisplay(d);
-                printf("AUTO-SHOOT: OFF\n");
+                printf("BOT: OFF\n");
                 speakS("off");
             }
         }
