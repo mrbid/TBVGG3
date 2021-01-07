@@ -464,7 +464,6 @@ int main(int argc, char *argv[])
 
             if(crosshair == 1)
             {
-                //processScanArea(twin);
                 XSetForeground(d, gc, 0);
                 XDrawPoint(d, event.xbutton.window, gc, x, y);
                 XSetForeground(d, gc, 65280);
