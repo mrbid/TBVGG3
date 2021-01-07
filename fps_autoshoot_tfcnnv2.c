@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 
     //
 
-    const uint r0 = 30;    // dimensions of sample image square
+    const uint r0 = 30;     // dimensions of sample image square
     const uint r2 = r0*r0;  // total pixels in square
     const uint r2i = r2*3;  // total inputs to neural net pixels*channels
     const uint rd2 = r0/2;  // total pixels divided by two
@@ -335,6 +335,11 @@ int main(int argc, char *argv[])
 
             // free image block
             XFree(img);
+
+            // draw sample outline
+            GC gc = DefaultGC(d, si);
+            XSetForeground(d, gc, 65280);
+            XDrawRectangle(d, event.xbutton.window, gc, x-rd2, y-rd2, r0, r0);
 
             // calculate mean normalised input buffer
             float input[r2i] = {0};
