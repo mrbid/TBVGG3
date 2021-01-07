@@ -219,6 +219,7 @@ int main(int argc, char *argv[])
     printf("Hotkeys:\n");
     printf("L-CTRL + L-ALT = Toggle BOT & HOTKEYS ON/OFF\n");
     printf("T = Toggle auto-shoot\n");
+    printf("P = Toggle crosshair\n");
     printf("C = Output input array from reticule area.\n");
     printf("G = Get activation for reticule area.\n");
     printf("Q = Train on reticule area.\n");
