@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 {
     printf("James William Fletcher (james@voxdsp.com)\n\n");
     printf("Hotkeys:\n");
-    printf("L=CTRL + L-ALT = Toggle BOT & HOTKEYS ON/OFF\n");
+    printf("L-CTRL + L-ALT = Toggle BOT & HOTKEYS ON/OFF\n");
     printf("T = Toggle auto-shoot\n");
     printf("C = Output input array from reticule area.\n");
     printf("G = Get activation for reticule area.\n");
