@@ -300,7 +300,6 @@ int main(int argc, char *argv[])
                 XGetWindowAttributes(d, twin, &attr);
                 x = attr.width/2;
                 y = attr.height/2;
-                printf("CSET: %ix%i\n", x, y);
 
                 // set mouse event
                 memset(&event, 0x00, sizeof(event));
@@ -313,7 +312,7 @@ int main(int argc, char *argv[])
                 enable = 1;
                 printf("\a\n");
                 usleep(300000);
-                printf("BOT: ON\n");
+                printf("BOT: ON [%ix%i]\n", x, y);
                 speakS("on");
             }
             else
