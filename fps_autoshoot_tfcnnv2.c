@@ -26,6 +26,7 @@
 #define uint unsigned int
 #define SCAN_AREA 30
 #define ACTIVATION_SENITIVITY 0.90
+#define FIRE_RATE_LIMIT_MS 3000
 
 const uint r0 = SCAN_AREA;  // dimensions of sample image square
 const uint r2 = r0*r0;      // total pixels in square
@@ -411,6 +412,9 @@ int main(int argc, char *argv[])
                     event.xbutton.state = 0x100;
                     XSendEvent(d, PointerWindow, True, 0xfff, &event);
                     XFlush(d);
+
+                    // fire limit
+                    usleep(FIRE_RATE_LIMIT_MS * 1000);
                 }
             }
             else if(key_is_pressed(XK_G)) // print activation when pressed
