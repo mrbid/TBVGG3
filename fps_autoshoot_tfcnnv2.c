@@ -416,7 +416,7 @@ int main(int argc, char *argv[])
             {
                 processScanArea(twin);
                 const float ret = processNetwork(&net, &input[0], NO_LEARN);
-                printf("A: %f\n", ret);
+                //printf("A: %f\n", ret);
                 if(ret > 0.7)
                 {
                     XSetForeground(d, gc, 65280);
