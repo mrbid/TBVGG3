@@ -25,6 +25,7 @@
 
 #define uint unsigned int
 #define SCAN_AREA 30
+#define ACTIVATION_SENITIVITY 0.90
 
 const uint r0 = SCAN_AREA;  // dimensions of sample image square
 const uint r2 = r0*r0;      // total pixels in square
@@ -84,7 +85,7 @@ void speakF(const double f)
         sleep(1);
 }
 
-Window getWindow()
+Window getWindow() // gets child window mouse is over
 {
     Display *d = XOpenDisplay((char *) NULL);
     if(d == NULL)
@@ -232,12 +233,12 @@ int main(int argc, char *argv[])
 
     //
 
-    createNetwork(&net, WEIGHT_INIT_UNIFORM_GLOROT, r2i, 3, 128, 1);
+    createNetwork(&net, WEIGHT_INIT_NORMAL_GLOROT, r2i, 3, 256, 1);
     setOptimiser(&net, OPTIM_NESTEROV);
     setActivator(&net, ELLIOT);
-    setLearningRate(&net, 0.01);
+    setLearningRate(&net, 0.03);
 
-    setUnitDropout(&net, 0.4);
+    setUnitDropout(&net, 0.13);
     setMomentum(&net, 0.1);
     // setTargetMin(&net, 0.1);
     // setTargetMax(&net, 0.9);
@@ -394,7 +395,7 @@ int main(int argc, char *argv[])
             if(autofire == 1) // left mouse trigger on activation
             {
                 processScanArea(twin);
-                if(processNetwork(&net, &input[0], NO_LEARN) > 0.7)
+                if(processNetwork(&net, &input[0], NO_LEARN) > ACTIVATION_SENITIVITY)
                 {
                     // fire mouse down
                     event.type = ButtonPress;
@@ -416,8 +417,8 @@ int main(int argc, char *argv[])
             {
                 processScanArea(twin);
                 const float ret = processNetwork(&net, &input[0], NO_LEARN);
-                //printf("A: %f\n", ret);
-                if(ret > 0.7)
+                printf("A: %f\n", ret);
+                if(ret > ACTIVATION_SENITIVITY)
                 {
                     XSetForeground(d, gc, 65280);
                     XDrawRectangle(d, event.xbutton.window, gc, x-rd2-1, y-rd2-1, r0+2, r0+2);
