@@ -219,7 +219,8 @@ int main(int argc, char *argv[])
 {
     printf("James William Fletcher (james@voxdsp.com)\n\n");
     printf("Hotkeys:\n");
-    printf("L-CTRL + L-ALT = Toggle BOT & HOTKEYS ON/OFF\n");
+    printf("L-CTRL + L-ALT = Toggle BOT ON/OFF\n");
+    printf("R-CTRL + R-ALT = Toggle HOTKEYS ON/OFF\n");
     printf("T = Toggle auto-shoot\n");
     printf("P = Toggle crosshair\n");
     printf("C = Output input array from reticule area.\n");
@@ -270,6 +271,7 @@ int main(int argc, char *argv[])
     uint enable = 0;
     uint autofire = 0;
     uint crosshair = 0;
+    uint hotkeys = 1;
 
     //
     
@@ -278,7 +280,7 @@ int main(int argc, char *argv[])
         // loop every 10 ms (1,000 microsecond = 1 millisecond)
         usleep(1000);
 
-        // input toggle
+        // bot toggle
         if(key_is_pressed(XK_Control_L) && key_is_pressed(XK_Alt_L))
         {
             if(enable == 0)
@@ -312,7 +314,6 @@ int main(int argc, char *argv[])
                 event.xbutton.window = twin;
 
                 enable = 1;
-                printf("\a\n");
                 usleep(300000);
                 printf("BOT: ON [%ix%i]\n", x, y);
                 speakS("on");
@@ -320,6 +321,7 @@ int main(int argc, char *argv[])
             else
             {
                 enable = 0;
+                usleep(300000);
                 XCloseDisplay(d);
                 printf("BOT: OFF\n");
                 speakS("off");
@@ -327,70 +329,96 @@ int main(int argc, char *argv[])
         }
         
         // toggle bot on/off
-        if(enable == 1)
+        if(enable == 1 && getWindow() == twin)
         {
-            // detect when pressed
-            if(key_is_pressed(XK_T))
+            // input toggle
+            if(key_is_pressed(XK_Control_R) && key_is_pressed(XK_Alt_R))
             {
-                if(autofire == 0)
+                if(hotkeys == 0)
                 {
-                    autofire = 1;
-                    printf("AUTO-FIRE: ON\n");
-                    speakS("af on");
+                    hotkeys = 1;
+                    usleep(300000);
+                    printf("HOTKEYS: ON [%ix%i]\n", x, y);
+                    speakS("hk on");
                 }
                 else
                 {
-                    autofire = 0;
-                    printf("AUTO-FIRE: OFF\n");
-                    speakS("af off");
-                }
-            }
-            
-            // crosshair toggle
-            if(key_is_pressed(XK_P))
-            {
-                if(crosshair == 0)
-                {
-                    crosshair = 1;
-                    printf("CROSSHAIR: ON\n");
-                    speakS("cx on");
-                }
-                else
-                {
-                    crosshair = 0;
-                    printf("CROSSHAIR: OFF\n");
-                    speakS("cx off");
+                    hotkeys = 0;
+                    usleep(300000);
+                    printf("HOTKEYS: OFF\n");
+                    speakS("hk off");
                 }
             }
 
-            // print input data
-            if(key_is_pressed(XK_C))
+            if(hotkeys == 1)
             {
-                processScanArea(twin);
+                // detect when pressed
+                if(key_is_pressed(XK_T))
+                {
+                    if(autofire == 0)
+                    {
+                        autofire = 1;
+                        usleep(300000);
+                        printf("AUTO-FIRE: ON\n");
+                        speakS("af on");
+                    }
+                    else
+                    {
+                        autofire = 0;
+                        usleep(300000);
+                        printf("AUTO-FIRE: OFF\n");
+                        speakS("af off");
+                    }
+                }
+                
+                // crosshair toggle
+                if(key_is_pressed(XK_P))
+                {
+                    if(crosshair == 0)
+                    {
+                        crosshair = 1;
+                        usleep(300000);
+                        printf("CROSSHAIR: ON\n");
+                        speakS("cx on");
+                    }
+                    else
+                    {
+                        crosshair = 0;
+                        usleep(300000);
+                        printf("CROSSHAIR: OFF\n");
+                        speakS("cx off");
+                    }
+                }
 
-                // per channel
-                printf("R: ");
-                for(uint i = 0; i < r2; i++)
-                    printf("%.2f ", r[i]);
-                printf("\n\n");
+                // print input data
+                if(key_is_pressed(XK_C))
+                {
+                    processScanArea(twin);
 
-                printf("G: ");
-                for(uint i = 0; i < r2; i++)
-                    printf("%.2f ", g[i]);
-                printf("\n\n");
+                    // per channel
+                    printf("R: ");
+                    for(uint i = 0; i < r2; i++)
+                        printf("%.2f ", r[i]);
+                    printf("\n\n");
 
-                printf("B: ");
-                for(uint i = 0; i < r2; i++)
-                    printf("%.2f ", b[i]);
-                printf("\n\n");
+                    printf("G: ");
+                    for(uint i = 0; i < r2; i++)
+                        printf("%.2f ", g[i]);
+                    printf("\n\n");
 
-                // mean normalised 1d input array
-                printf("I: ");
-                // for(uint i = 0; i < r2i; i++)
-                //     printf("%.2f ", input[i]);
-                for(uint i = 0; i < r2i; i += 3)
-                    printf("%.2f %.2f %.2f :: ", input[i], input[i+1], input[i+2]);
-                printf("\n\n");
+                    printf("B: ");
+                    for(uint i = 0; i < r2; i++)
+                        printf("%.2f ", b[i]);
+                    printf("\n\n");
+
+                    // mean normalised 1d input array
+                    printf("I: ");
+                    // for(uint i = 0; i < r2i; i++)
+                    //     printf("%.2f ", input[i]);
+                    for(uint i = 0; i < r2i; i += 3)
+                        printf("%.2f %.2f %.2f :: ", input[i], input[i+1], input[i+2]);
+                    printf("\n\n");
+                }
             }
             
             if(autofire == 1) // left mouse trigger on activation
@@ -417,7 +445,7 @@ int main(int argc, char *argv[])
                     usleep(FIRE_RATE_LIMIT_MS * 1000);
                 }
             }
-            else if(key_is_pressed(XK_G)) // print activation when pressed
+            else if(hotkeys == 1 && key_is_pressed(XK_G)) // print activation when pressed
             {
                 processScanArea(twin);
                 const float ret = processNetwork(&net, &input[0], NO_LEARN);
@@ -441,7 +469,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                if(key_is_pressed(XK_Q)) // train when pressed
+                if(hotkeys == 1 && key_is_pressed(XK_Q)) // train when pressed
                 {
                     processScanArea(twin);
                     processNetwork(&net, &input[0], LEARN_MAX);
@@ -453,7 +481,7 @@ int main(int argc, char *argv[])
                     XDrawRectangle(d, event.xbutton.window, gc, x-rd2-2, y-rd2-2, r0+4, r0+4);
                     XFlush(d);
                 }
-                else if(key_is_pressed(XK_E)) // untrain when pressed
+                else if(hotkeys == 1 && key_is_pressed(XK_E)) // untrain when pressed
                 {
                     processScanArea(twin);
                     processNetwork(&net, &input[0], LEARN_MIN);
