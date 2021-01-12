@@ -58,10 +58,10 @@
         negligibly higher use of memory to avoid ALU divisions.
 
     Network size:
-        (3x28x28)+(32x3x10)+(64x32x10)+(128x64x10)+(32x3x10)+(64x32x10)+
-        (128x64x10)+(32x28x28)+(32x14x14)+(64x14x14)+(64x7x7)+(128x7x7)+
-        (32x28x28)+(64x14x14)+(128x7x7) = 306288 floats
-        306288*4 = 1225152 bytes = 1.168395996 megabytes
+        (3x28x28)+(32x3x9)+(64x32x9)+(128x64x9)+(32x3x9)+(64x32x9)+
+        (128x64x9)+(32x28x28)+(32x14x14)+(64x14x14)+(64x7x7)+(128x7x7)+
+        (32x28x28)+(64x14x14)+(128x7x7)+32+64+128 = 285840 floats
+        285840*4 = 1143360 bytes = 1.090393066 megabytes
 */
 
 #ifndef TBVGG3_H
@@ -88,17 +88,22 @@
 struct
 {
     //inputs
-    float input[3][28][28];
+    //float input[3][28][28];
 
     //filters:num, d,  w+b
-    float l1f[32 ][3 ][10];
-    float l2f[64 ][32][10];
-    float l3f[128][64][10];
+    float l1f[32 ][3 ][9];
+    float l2f[64 ][32][9];
+    float l3f[128][64][9];
+
+    // filter bias's
+    float l1fb[32 ][1];
+    float l2fb[64 ][1];
+    float l3fb[128][1];
 
     // filter momentum's
-    float l1fm[32 ][3 ][10];
-    float l2fm[64 ][32][10];
-    float l3fm[128][64][10];
+    float l1fm[32 ][3 ][9];
+    float l2fm[64 ][32][9];
+    float l3fm[128][64][9];
 
     // outputs
     //       d,  y,  x
@@ -228,7 +233,7 @@ void TBVGG3_Reset(TBVGG3_Network* net)
     memset(net->l3fm, 0, sizeof(net->l3fm));
 
     // zero buffers
-    memset(net->input, 0, sizeof(net->input));
+    //memset(net->input, 0, sizeof(net->input));
 
     memset(net->p1, 0, sizeof(net->p1));
     memset(net->p2, 0, sizeof(net->p2));
@@ -325,7 +330,7 @@ static inline uint TBVGG3_CheckPadded(const uint x, const uint y, const uint w, 
     return 0;
 }
 
-float TBVGG3_3x3Conv(const float*** input, const float** filter, const uint depth, const uint width, const uint height, const uint x, const uint y)
+float TBVGG3_3x3Conv(const float*** input, const uint depth, const uint width, const uint height, const uint x, const uint y, const float** filter, const float* filter_bias)
 {
     // input depth needs to be same as filter depth
     // This will return a single float output. Call this x*y times per filter.
@@ -376,7 +381,7 @@ float TBVGG3_3x3Conv(const float*** input, const float** filter, const uint dept
     }
 
     // bias
-    ro += filter[i][9];
+    ro += filter_bias[0];
 
     // return output
     return ro;
