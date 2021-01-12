@@ -76,8 +76,10 @@
 #include <time.h>
 #include <string.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 
 #define uint unsigned int
+#define sint int
 #define LEARNING_RATE 0.03
 #define NAG_MOMENTUM  0.1
 
@@ -139,12 +141,244 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
 void  TBVGG3_Reset(TBVGG3_Network* net);
 int   TBVGG3_SaveNetwork(TBVGG3_Network* net, const char* file);
 int   TBVGG3_LoadNetwork(TBVGG3_Network* net, const char* file);
+void  TBVGG3_Dump(TBVGG3_Network* net, const char* file);
 
 /*
 --------------------------------------
     the code ...
 --------------------------------------
 */
+
+void TBVGG3_Dump(TBVGG3_Network* net, const char* file)
+{
+    char p[256];
+    mkdir(file, 0777);
+
+    sprintf(p, "%s/l1f.txt", file);
+    FILE* f = fopen(p, "w");
+    if(f != NULL)
+    {
+        for(uint i = 0; i < 32; i++)
+        {
+            fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
+            for(uint j = 0; j < 3; j++)
+            {
+                fprintf(f, "D(%u): ", j);
+                for(uint k = 0; k < 9; k++)
+                    fprintf(f, "%.2f ", net->l1f[i][j][k]);
+                fprintf(f, "\n");
+            }
+            fprintf(f, "\n");
+        }
+
+        fclose(f);
+    }
+
+    sprintf(p, "%s/l2f.txt", file);
+    f = fopen(p, "w");
+    if(f != NULL)
+    {
+        for(uint i = 0; i < 64; i++)
+        {
+            fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
+            for(uint j = 0; j < 32; j++)
+            {
+                fprintf(f, "D(%u): ", j);
+                for(uint k = 0; k < 9; k++)
+                    fprintf(f, "%.2f ", net->l2f[i][j][k]);
+                fprintf(f, "\n");
+            }
+            fprintf(f, "\n");
+        }
+
+        fclose(f);
+    }
+
+    sprintf(p, "%s/l3f.txt", file);
+    f = fopen(p, "w");
+    if(f != NULL)
+    {
+        for(uint i = 0; i < 128; i++)
+        {
+            fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
+            for(uint j = 0; j < 64; j++)
+            {
+                fprintf(f, "D(%u): ", j);
+                for(uint k = 0; k < 9; k++)
+                    fprintf(f, "%.2f ", net->l2f[i][j][k]);
+                fprintf(f, "\n");
+            }
+            fprintf(f, "\n");
+        }
+
+        fclose(f);
+    }
+
+    ///
+
+    sprintf(p, "%s/o1.txt", file);
+    f = fopen(p, "w");
+    if(f != NULL)
+    {
+        for(uint i = 0; i < 32; i++)
+        {
+            fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
+            for(uint j = 0; j < 28; j++)
+            {
+                fprintf(f, "Y(%u): ", j);
+                for(uint k = 0; k < 28; k++)
+                    fprintf(f, "%.2f ", net->o1[i][j][k]);
+                fprintf(f, "\n");
+            }
+            fprintf(f, "\n");
+        }
+        fclose(f);
+    }
+
+    sprintf(p, "%s/p1.txt", file);
+    f = fopen(p, "w");
+    if(f != NULL)
+    {
+        for(uint i = 0; i < 32; i++)
+        {
+            fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
+            for(uint j = 0; j < 14; j++)
+            {
+                fprintf(f, "Y(%u): ", j);
+                for(uint k = 0; k < 14; k++)
+                    fprintf(f, "%.2f ", net->p1[i][j][k]);
+                fprintf(f, "\n");
+            }
+            fprintf(f, "\n");
+        }
+        fclose(f);
+    }
+
+    ///
+
+    sprintf(p, "%s/o2.txt", file);
+    f = fopen(p, "w");
+    if(f != NULL)
+    {
+        for(uint i = 0; i < 64; i++)
+        {
+            fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
+            for(uint j = 0; j < 14; j++)
+            {
+                fprintf(f, "Y(%u): ", j);
+                for(uint k = 0; k < 14; k++)
+                    fprintf(f, "%.2f ", net->o2[i][j][k]);
+                fprintf(f, "\n");
+            }
+            fprintf(f, "\n");
+        }
+        fclose(f);
+    }
+
+    sprintf(p, "%s/p2.txt", file);
+    f = fopen(p, "w");
+    if(f != NULL)
+    {
+        for(uint i = 0; i < 64; i++)
+        {
+            fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
+            for(uint j = 0; j < 7; j++)
+            {
+                fprintf(f, "Y(%u): ", j);
+                for(uint k = 0; k < 7; k++)
+                    fprintf(f, "%.2f ", net->p2[i][j][k]);
+                fprintf(f, "\n");
+            }
+            fprintf(f, "\n");
+        }
+        fclose(f);
+    }
+
+    ///
+
+    sprintf(p, "%s/o3.txt", file);
+    f = fopen(p, "w");
+    if(f != NULL)
+    {
+        for(uint i = 0; i < 128; i++)
+        {
+            fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
+            for(uint j = 0; j < 7; j++)
+            {
+                fprintf(f, "Y(%u): ", j);
+                for(uint k = 0; k < 7; k++)
+                    fprintf(f, "%.2f ", net->o3[i][j][k]);
+                fprintf(f, "\n");
+            }
+            fprintf(f, "\n");
+        }
+        fclose(f);
+    }
+
+    ///
+
+    sprintf(p, "%s/e1.txt", file);
+    f = fopen(p, "w");
+    if(f != NULL)
+    {
+        for(uint i = 0; i < 32; i++)
+        {
+            fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
+            for(uint j = 0; j < 28; j++)
+            {
+                fprintf(f, "Y(%u): ", j);
+                for(uint k = 0; k < 28; k++)
+                    fprintf(f, "%.2f ", net->e1[i][j][k]);
+                fprintf(f, "\n");
+            }
+            fprintf(f, "\n");
+        }
+        fclose(f);
+    }
+
+    ///
+
+    sprintf(p, "%s/e2.txt", file);
+    f = fopen(p, "w");
+    if(f != NULL)
+    {
+        for(uint i = 0; i < 64; i++)
+        {
+            fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
+            for(uint j = 0; j < 14; j++)
+            {
+                fprintf(f, "Y(%u): ", j);
+                for(uint k = 0; k < 14; k++)
+                    fprintf(f, "%.2f ", net->e2[i][j][k]);
+                fprintf(f, "\n");
+            }
+            fprintf(f, "\n");
+        }
+        fclose(f);
+    }
+
+    ///
+
+    sprintf(p, "%s/e3.txt", file);
+    f = fopen(p, "w");
+    if(f != NULL)
+    {
+        for(uint i = 0; i < 128; i++)
+        {
+            fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
+            for(uint j = 0; j < 7; j++)
+            {
+                fprintf(f, "Y(%u): ", j);
+                for(uint k = 0; k < 7; k++)
+                    fprintf(f, "%.2f ", net->e3[i][j][k]);
+                fprintf(f, "\n");
+            }
+            fprintf(f, "\n");
+        }
+        fclose(f);
+    }
+
+}
 
 static inline float TBVGG3_RELU(const float x)
 {
@@ -207,30 +441,34 @@ void TBVGG3_Reset(TBVGG3_Network* net)
     // Weight Init
 
     //l1f
-    float d = sqrt(2.0 / 2384);
+    float d = sqrt(2.0 / 32);
     for(uint i = 0; i < 32; i++)
         for(uint j = 0; j < 3; j++)
-            for(uint k = 0; k < 10; k++)
-                net->l1f[i][j][k] = k == 9 ? 0 : TBVGG3_NormalRandom() * d; // 9 = bias
+            for(uint k = 0; k < 9; k++)
+                net->l1f[i][j][k] = TBVGG3_NormalRandom() * d;
 
     //l2f
     d = sqrt(2.0 / 96);
     for(uint i = 0; i < 64; i++)
         for(uint j = 0; j < 32; j++)
-            for(uint k = 0; k < 10; k++)
-                net->l2f[i][j][k] = k == 9 ? 0 : TBVGG3_NormalRandom() * d;
+            for(uint k = 0; k < 9; k++)
+                net->l2f[i][j][k] = TBVGG3_NormalRandom() * d;
 
     //l3f
     d = sqrt(2.0 / 129);
     for(uint i = 0; i < 128; i++)
         for(uint j = 0; j < 64; j++)
-            for(uint k = 0; k < 10; k++)
-                net->l3f[i][j][k] = k == 9 ? 0 : TBVGG3_NormalRandom() * d;
+            for(uint k = 0; k < 9; k++)
+                net->l3f[i][j][k] = TBVGG3_NormalRandom() * d;
     
-    // zero momentum's
+    // zero momentum and bias
     memset(net->l1fm, 0, sizeof(net->l1fm));
     memset(net->l2fm, 0, sizeof(net->l2fm));
     memset(net->l3fm, 0, sizeof(net->l3fm));
+
+    memset(net->l1fb, 0, sizeof(net->l1fm));
+    memset(net->l2fb, 0, sizeof(net->l2fm));
+    memset(net->l3fb, 0, sizeof(net->l3fm));
 
     // zero buffers
     //memset(net->input, 0, sizeof(net->input));
@@ -323,9 +561,9 @@ void TBVGG3_2x2MaxPool(const uint depth, const uint wh, const float input[depth]
     }
 }
 
-static inline uint TBVGG3_CheckPadded(const uint y, const uint x, const uint wh)
+static inline uint TBVGG3_CheckPadded(const sint x, const sint y, const uint wh)
 {
-    if(x < 0 || y < 0 || x > wh || y > wh)
+    if(x < 0 || y < 0 || x >= wh || y >= wh)
         return 1;
     return 0;
 }
@@ -336,10 +574,9 @@ float TBVGG3_3x3Conv(const uint depth, const uint wh, const float input[depth][w
     // This will return a single float output. Call this x*y times per filter.
     // It's zero padded so if TBVGG3_CheckPadded() returns 1 it's a no operation
     float ro = 0;
+    sint nx = 0, ny = 0;
     for(uint i = 0; i < depth; i++)
     {
-        uint nx = 0, ny = 0;
-
         // lower row
         nx = x-1, ny = y-1;
         if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
@@ -398,7 +635,7 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
         {
             for(uint k = 0; k < 28; k++) // width
             {
-                net->o1[i][j][k] = TBVGG3_3x3Conv(3, 28, input, j, k, net->l1f[i], net->l1fb[i]);  
+                net->o1[i][j][k] = TBVGG3_3x3Conv(3, 28, input, j, k, net->l1f[i], net->l1fb[i]);
             }
         }
     }
@@ -413,7 +650,7 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
         {
             for(uint k = 0; k < 14; k++) // width
             {
-                net->o2[i][j][k] = TBVGG3_3x3Conv(32, 14, net->p1, j, k, net->l2f[i], net->l2fb[i]);  
+                net->o2[i][j][k] = TBVGG3_3x3Conv(32, 14, net->p1, j, k, net->l2f[i], net->l2fb[i]);
             }
         }
     }
@@ -428,7 +665,7 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
         {
             for(uint k = 0; k < 7; k++) // width
             {
-                net->o3[i][j][k] = TBVGG3_3x3Conv(64, 7, net->p2, j, k, net->l3f[i], net->l3fb[i]);  
+                net->o3[i][j][k] = TBVGG3_3x3Conv(64, 7, net->p2, j, k, net->l3f[i], net->l3fb[i]);
             }
         }
     }
