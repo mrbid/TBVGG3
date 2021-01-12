@@ -523,25 +523,27 @@ int TBVGG3_LoadNetwork(TBVGG3_Network* net, const char* file)
 
 void TBVGG3_2x2MaxPool(const uint depth, const uint wh, const float input[depth][wh][wh], float output[depth][wh/2][wh/2])
 {
-    // output tracking, more memory for less alu division ops
-    uint oi = 0, oj = 0;
-
     // for every depth
     for(uint d = 0; d < depth; d++)
     {
+        // output tracking, more memory for less alu division ops
+        uint oi = 0, oj = 0;
+
         // for every 2x2 chunk of input
         for(uint i = 0; i < wh; i += 2, oi++)
         {
             for(uint j = 0; j < wh; j += 2, oj++)
             {
                 // // get 2x2 chunk from input
-                // const float f[] = {input[i][j], input[i+1][j], input[i][j+1], input[i+1][j+1]};
+                // const float f[] = {input[d][i][j], input[d][i+1][j], input[d][i][j+1], input[d][i+1][j+1]};
 
                 // // iterate 2x2 chunk for max val
                 // float max = 0;
                 // for(uint k = 0; k < 4; k++)
                 //     if(f[k] > max)
                 //         max = f[k];
+
+                // printf("O0: %u %u\n", depth, wh);
                 
                 // get max val
                 float max = 0;
@@ -554,9 +556,16 @@ void TBVGG3_2x2MaxPool(const uint depth, const uint wh, const float input[depth]
                 if(input[d][i+1][j+1] > max)
                     max = input[d][i+1][j+1];
 
+                // printf("O1: %ux%u : %.2f %.2f %.2f %.2f\n", i, j, input[d][i][j], input[d][i][j+1], input[d][i+1][j], input[d][i+1][j+1]);
+
                 // output max val
                 output[d][oi][oj] = max;
+
+                // printf("O2: %ux%u : %.2f %.2f\n", oi, oj, output[d][oi][oj], max);
+                // char in[256];
+                // fgets(in, 256, stdin);
             }
+            oj = 0;
         }
     }
 }
@@ -621,7 +630,7 @@ float TBVGG3_3x3Conv(const uint depth, const uint wh, const float input[depth][w
     ro += filter_bias[0];
 
     // return output
-    return ro;
+    return TBVGG3_RELU(ro);
 }
 
 float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TBVGG3_LEARNTYPE learn)
@@ -642,6 +651,9 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
 
     // max pool the output
     TBVGG3_2x2MaxPool(32, 28, net->o1, net->p1);
+
+    TBVGG3_Dump(net, "dat");
+    
 
     // convolve output with 64 filters
     for(uint i = 0; i < 64; i++) // num filter
