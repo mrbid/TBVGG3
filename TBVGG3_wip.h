@@ -392,13 +392,13 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
     if(net == NULL){return -1;}
 
     // convolve input with 32 filters
-    for(int i = 0; i < 32; i++) // num filter
+    for(uint i = 0; i < 32; i++) // num filter
     {
-        for(int j = 0; j < 28; j++) // height
+        for(uint j = 0; j < 28; j++) // height
         {
-            for(int k = 0; k < 28; k++) // width
+            for(uint k = 0; k < 28; k++) // width
             {
-                net->o1[i][i][j] = TBVGG3_3x3Conv(3, 28, input, i, j, net->l1f[i], net->l1fb[i]);  
+                net->o1[i][j][k] = TBVGG3_3x3Conv(3, 28, input, j, k, net->l1f[i], net->l1fb[i]);  
             }
         }
     }
@@ -407,19 +407,50 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
     TBVGG3_2x2MaxPool(32, 28, net->o1, net->p1);
 
     // convolve output with 64 filters
-    for(int i = 0; i < 64; i++) // num filter
+    for(uint i = 0; i < 64; i++) // num filter
     {
-        for(int j = 0; j < 14; j++) // height
+        for(uint j = 0; j < 14; j++) // height
         {
-            for(int k = 0; k < 14; k++) // width
+            for(uint k = 0; k < 14; k++) // width
             {
-                net->o2[i][i][j] = TBVGG3_3x3Conv(32, 14, net->p1, i, j, net->l2f[i], net->l2fb[i]);  
+                net->o2[i][j][k] = TBVGG3_3x3Conv(32, 14, net->p1, j, k, net->l2f[i], net->l2fb[i]);  
             }
         }
     }
 
-    return 0;
+    // max pool the output
+    TBVGG3_2x2MaxPool(64, 14, net->o1, net->p1);
 
+    // convolve output with 64 filters
+    for(uint i = 0; i < 128; i++) // num filter
+    {
+        for(uint j = 0; j < 7; j++) // height
+        {
+            for(uint k = 0; k < 7; k++) // width
+            {
+                net->o3[i][j][k] = TBVGG3_3x3Conv(64, 7, net->p2, j, k, net->l3f[i], net->l3fb[i]);  
+            }
+        }
+    }
+
+    // global average pooling
+    float gap[128] = {0};
+    for(uint i = 0; i < 128; i++)
+    {
+        for(uint j = 0; j < 7; j++)
+            for(uint k = 0; k < 7; k++)
+                gap[i] += net->o3[i][j][k];
+        gap[i] /= 49;
+    }
+
+    // average final activation
+    float rv = 0;
+    for(uint i = 0; i < 128; i++)
+        rv += gap[i];
+    rv /= 128;
+
+    // return activation
+    return rv;
 }
 
 #endif
