@@ -46,6 +46,9 @@
         VGG paper references GLOROT with normal distribution,
         this is what I chose initially.
 
+        expected input RGB 28x28 pixels;
+        float input[3][28][28];
+
     Preferences;
         You can see that I do not make an active effort to avoid
         branching, when I consider the trade off, such as with the
@@ -87,9 +90,6 @@
 // network struct
 struct
 {
-    //inputs
-    //float input[3][28][28];
-
     //filters:num, d,  w+b
     float l1f[32 ][3 ][9];
     float l2f[64 ][32][9];
@@ -114,7 +114,7 @@ struct
     float o3[128][7][7];
 
     // error gradients
-    //       y,  x
+    //       d,  y,  x
     float e1[32][28][28];
     float e2[64][14][14];
     float e3[128][7][7];
@@ -135,7 +135,7 @@ typedef TBVGG3_LEARNTYPE;
 --------------------------------------
 */
 
-float TBVGG3_Process(TBVGG3_Network* net, const float* inputs, const TBVGG3_LEARNTYPE learn);
+float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TBVGG3_LEARNTYPE learn);
 void  TBVGG3_Reset(TBVGG3_Network* net);
 int   TBVGG3_SaveNetwork(TBVGG3_Network* net, const char* file);
 int   TBVGG3_LoadNetwork(TBVGG3_Network* net, const char* file);
@@ -283,7 +283,7 @@ int TBVGG3_LoadNetwork(TBVGG3_Network* net, const char* file)
     return 0;
 }
 
-void TBVGG3_2x2MaxPool(const float*** input, float*** output, const uint depth, const uint input_width, const uint input_height)
+void TBVGG3_2x2MaxPool(const uint depth, const uint wh, const float input[depth][wh][wh], float output[depth][wh/2][wh/2])
 {
     // output tracking, more memory for less alu division ops
     uint oi = 0, oj = 0;
@@ -292,9 +292,9 @@ void TBVGG3_2x2MaxPool(const float*** input, float*** output, const uint depth, 
     for(uint d = 0; d < depth; d++)
     {
         // for every 2x2 chunk of input
-        for(uint i = 0; i < input_height; i += 2, oi++)
+        for(uint i = 0; i < wh; i += 2, oi++)
         {
-            for(uint j = 0; j < input_width; j += 2, oj++)
+            for(uint j = 0; j < wh; j += 2, oj++)
             {
                 // // get 2x2 chunk from input
                 // const float f[] = {input[i][j], input[i+1][j], input[i][j+1], input[i+1][j+1]};
@@ -323,14 +323,14 @@ void TBVGG3_2x2MaxPool(const float*** input, float*** output, const uint depth, 
     }
 }
 
-static inline uint TBVGG3_CheckPadded(const uint x, const uint y, const uint w, const uint h)
+static inline uint TBVGG3_CheckPadded(const uint y, const uint x, const uint wh)
 {
-    if(x < 0 || y < 0 || x > w || y > h)
+    if(x < 0 || y < 0 || x > wh || y > wh)
         return 1;
     return 0;
 }
 
-float TBVGG3_3x3Conv(const float*** input, const uint depth, const uint width, const uint height, const uint x, const uint y, const float** filter, const float* filter_bias)
+float TBVGG3_3x3Conv(const uint depth, const uint wh, const float input[depth][wh][wh], const uint y, const uint x, const float filter[depth][9], const float* filter_bias)
 {
     // input depth needs to be same as filter depth
     // This will return a single float output. Call this x*y times per filter.
@@ -342,41 +342,41 @@ float TBVGG3_3x3Conv(const float*** input, const uint depth, const uint width, c
 
         // lower row
         nx = x-1, ny = y-1;
-        if(TBVGG3_CheckPadded(nx, ny, width, height) == 0)
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
             ro += input[i][ny][nx] * filter[i][0];
 
         nx = x,   ny = y-1;
-        if(TBVGG3_CheckPadded(nx, ny, width, height) == 0)
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
             ro += input[i][ny][nx] * filter[i][1];
 
         nx = x+1, ny = y-1;
-        if(TBVGG3_CheckPadded(nx, ny, width, height) == 0)
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
             ro += input[i][ny][nx] * filter[i][2];
 
         // middle row
         nx = x-1, ny = y;
-        if(TBVGG3_CheckPadded(nx, ny, width, height) == 0)
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
             ro += input[i][ny][nx] * filter[i][3];
 
         nx = x,   ny = y;
-        if(TBVGG3_CheckPadded(nx, ny, width, height) == 0)
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
             ro += input[i][ny][nx] * filter[i][4];
 
         nx = x+1, ny = y;
-        if(TBVGG3_CheckPadded(nx, ny, width, height) == 0)
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
             ro += input[i][ny][nx] * filter[i][5];
 
         // top row
         nx = x-1, ny = y+1;
-        if(TBVGG3_CheckPadded(nx, ny, width, height) == 0)
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
             ro += input[i][ny][nx] * filter[i][6];
 
         nx = x,   ny = y+1;
-        if(TBVGG3_CheckPadded(nx, ny, width, height) == 0)
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
             ro += input[i][ny][nx] * filter[i][7];
 
         nx = x+1, ny = y+1;
-        if(TBVGG3_CheckPadded(nx, ny, width, height) == 0)
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
             ro += input[i][ny][nx] * filter[i][8];
     }
 
@@ -387,9 +387,38 @@ float TBVGG3_3x3Conv(const float*** input, const uint depth, const uint width, c
     return ro;
 }
 
-float TBVGG3_Process(TBVGG3_Network* net, const float* inputs, const TBVGG3_LEARNTYPE learn)
+float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TBVGG3_LEARNTYPE learn)
 {
     if(net == NULL){return -1;}
+
+    // convolve input with 32 filters
+    for(int i = 0; i < 32; i++) // num filter
+    {
+        for(int j = 0; j < 28; j++) // height
+        {
+            for(int k = 0; k < 28; k++) // width
+            {
+                net->o1[i][i][j] = TBVGG3_3x3Conv(3, 28, input, i, j, net->l1f[i], net->l1fb[i]);  
+            }
+        }
+    }
+
+    // max pool the output
+    TBVGG3_2x2MaxPool(32, 28, net->o1, net->p1);
+
+    // convolve output with 64 filters
+    for(int i = 0; i < 64; i++) // num filter
+    {
+        for(int j = 0; j < 14; j++) // height
+        {
+            for(int k = 0; k < 14; k++) // width
+            {
+                net->o2[i][i][j] = TBVGG3_3x3Conv(32, 14, net->p1, i, j, net->l2f[i], net->l2fb[i]);  
+            }
+        }
+    }
+
+    return 0;
 
 }
 
