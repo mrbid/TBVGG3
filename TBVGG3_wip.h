@@ -471,8 +471,6 @@ void TBVGG3_Reset(TBVGG3_Network* net)
     memset(net->l3fb, 0, sizeof(net->l3fm));
 
     // zero buffers
-    //memset(net->input, 0, sizeof(net->input));
-
     memset(net->p1, 0, sizeof(net->p1));
     memset(net->p2, 0, sizeof(net->p2));
 
@@ -652,9 +650,6 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
     // max pool the output
     TBVGG3_2x2MaxPool(32, 28, net->o1, net->p1);
 
-    TBVGG3_Dump(net, "dat");
-    
-
     // convolve output with 64 filters
     for(uint i = 0; i < 64; i++) // num filter
     {
@@ -668,7 +663,7 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
     }
 
     // max pool the output
-    TBVGG3_2x2MaxPool(64, 14, net->o1, net->p1);
+    TBVGG3_2x2MaxPool(64, 14, net->o2, net->p2);
 
     // convolve output with 64 filters
     for(uint i = 0; i < 128; i++) // num filter
