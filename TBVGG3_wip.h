@@ -60,11 +60,23 @@
         you can also see in TBVGG3_2x2MaxPool() that I choose a
         negligibly higher use of memory to avoid ALU divisions.
 
+        I didn't think it was a good idea to maxpool the last
+        layer because there are no fully connected layers,
+        since it's going straight into a GAP it will make
+        negligible difference in the final average. Maxpooling
+        before a fully connected layer makes sense to reduce the
+        amount of parameters to a more important subset. But this
+        is a binary decision network, so a fully connected layer
+        wont have a profound impact, we just want to know if our
+        relevant features / filters had been activated enough to
+        signal YES, if not, it's a NO.
+
     Network size:
         (3x28x28)+(32x3x9)+(64x32x9)+(128x64x9)+(32x3x9)+(64x32x9)+
-        (128x64x9)+(32x28x28)+(32x14x14)+(64x14x14)+(64x7x7)+(128x7x7)+
-        (32x28x28)+(64x14x14)+(128x7x7)+32+64+128 = 285840 floats
-        285840*4 = 1143360 bytes = 1.090393066 megabytes
+        (128x64x9)+(32x28x28)+(32x14x14)+ (64x14x14)+(64x7x7)+
+        (128x7x7)+(32x28x28)+(64x14x14)+(128x7x7)+(32+64+128)+
+        (32+64+128) = 286,064 floats
+        286064*4 = 1,144,256 bytes = 1.091247559 megabytes
 */
 
 #ifndef TBVGG3_H
@@ -97,15 +109,20 @@ struct
     float l2f[64 ][32][9];
     float l3f[128][64][9];
 
-    // filter bias's
-    float l1fb[32 ][1];
-    float l2fb[64 ][1];
-    float l3fb[128][1];
-
     // filter momentum's
     float l1fm[32 ][3 ][9];
     float l2fm[64 ][32][9];
     float l3fm[128][64][9];
+
+    // // filter bias's
+    // float l1fb[32 ][1];
+    // float l2fb[64 ][1];
+    // float l3fb[128][1];
+
+    // // filter bias momentum's
+    // float l1fbm[32 ][1];
+    // float l2fbm[64 ][1];
+    // float l3fbm[128][1];
 
     // outputs
     //       d,  y,  x
@@ -153,231 +170,138 @@ void TBVGG3_Dump(TBVGG3_Network* net, const char* file)
 {
     char p[256];
     mkdir(file, 0777);
-
     sprintf(p, "%s/l1f.txt", file);
     FILE* f = fopen(p, "w");
-    if(f != NULL)
-    {
-        for(uint i = 0; i < 32; i++)
-        {
+    if(f != NULL){
+        for(uint i = 0; i < 32; i++){
             fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
-            for(uint j = 0; j < 3; j++)
-            {
+            for(uint j = 0; j < 3; j++){
                 fprintf(f, "D(%u): ", j);
                 for(uint k = 0; k < 9; k++)
                     fprintf(f, "%.2f ", net->l1f[i][j][k]);
                 fprintf(f, "\n");
-            }
-            fprintf(f, "\n");
-        }
-
-        fclose(f);
-    }
-
+            }fprintf(f, "\n");
+        }fclose(f);}
     sprintf(p, "%s/l2f.txt", file);
     f = fopen(p, "w");
-    if(f != NULL)
-    {
-        for(uint i = 0; i < 64; i++)
-        {
+    if(f != NULL){
+        for(uint i = 0; i < 64; i++){
             fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
-            for(uint j = 0; j < 32; j++)
-            {
+            for(uint j = 0; j < 32; j++){
                 fprintf(f, "D(%u): ", j);
                 for(uint k = 0; k < 9; k++)
                     fprintf(f, "%.2f ", net->l2f[i][j][k]);
                 fprintf(f, "\n");
-            }
-            fprintf(f, "\n");
-        }
-
-        fclose(f);
-    }
-
+            }fprintf(f, "\n");
+        }fclose(f);}
     sprintf(p, "%s/l3f.txt", file);
     f = fopen(p, "w");
-    if(f != NULL)
-    {
-        for(uint i = 0; i < 128; i++)
-        {
+    if(f != NULL){
+        for(uint i = 0; i < 128; i++){
             fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
-            for(uint j = 0; j < 64; j++)
-            {
+            for(uint j = 0; j < 64; j++){
                 fprintf(f, "D(%u): ", j);
                 for(uint k = 0; k < 9; k++)
                     fprintf(f, "%.2f ", net->l2f[i][j][k]);
                 fprintf(f, "\n");
-            }
-            fprintf(f, "\n");
-        }
-
-        fclose(f);
-    }
-
-    ///
-
+            }fprintf(f, "\n");
+        }fclose(f);}
     sprintf(p, "%s/o1.txt", file);
     f = fopen(p, "w");
-    if(f != NULL)
-    {
-        for(uint i = 0; i < 32; i++)
-        {
+    if(f != NULL){
+        for(uint i = 0; i < 32; i++){
             fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
-            for(uint j = 0; j < 28; j++)
-            {
+            for(uint j = 0; j < 28; j++){
                 fprintf(f, "Y(%u): ", j);
                 for(uint k = 0; k < 28; k++)
                     fprintf(f, "%.2f ", net->o1[i][j][k]);
                 fprintf(f, "\n");
-            }
-            fprintf(f, "\n");
-        }
-        fclose(f);
-    }
-
+            }fprintf(f, "\n");
+        }fclose(f);}
     sprintf(p, "%s/p1.txt", file);
     f = fopen(p, "w");
-    if(f != NULL)
-    {
-        for(uint i = 0; i < 32; i++)
-        {
+    if(f != NULL){
+        for(uint i = 0; i < 32; i++){
             fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
-            for(uint j = 0; j < 14; j++)
-            {
+            for(uint j = 0; j < 14; j++){
                 fprintf(f, "Y(%u): ", j);
                 for(uint k = 0; k < 14; k++)
                     fprintf(f, "%.2f ", net->p1[i][j][k]);
                 fprintf(f, "\n");
-            }
-            fprintf(f, "\n");
-        }
-        fclose(f);
-    }
-
-    ///
-
+            }fprintf(f, "\n");
+        }fclose(f);}
     sprintf(p, "%s/o2.txt", file);
     f = fopen(p, "w");
-    if(f != NULL)
-    {
-        for(uint i = 0; i < 64; i++)
-        {
+    if(f != NULL){
+        for(uint i = 0; i < 64; i++){
             fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
-            for(uint j = 0; j < 14; j++)
-            {
+            for(uint j = 0; j < 14; j++){
                 fprintf(f, "Y(%u): ", j);
                 for(uint k = 0; k < 14; k++)
                     fprintf(f, "%.2f ", net->o2[i][j][k]);
                 fprintf(f, "\n");
-            }
-            fprintf(f, "\n");
-        }
-        fclose(f);
-    }
-
+            }fprintf(f, "\n");
+        }fclose(f);}
     sprintf(p, "%s/p2.txt", file);
     f = fopen(p, "w");
-    if(f != NULL)
-    {
-        for(uint i = 0; i < 64; i++)
-        {
+    if(f != NULL){
+        for(uint i = 0; i < 64; i++){
             fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
-            for(uint j = 0; j < 7; j++)
-            {
+            for(uint j = 0; j < 7; j++){
                 fprintf(f, "Y(%u): ", j);
                 for(uint k = 0; k < 7; k++)
                     fprintf(f, "%.2f ", net->p2[i][j][k]);
                 fprintf(f, "\n");
-            }
-            fprintf(f, "\n");
-        }
-        fclose(f);
-    }
-
-    ///
-
+            }fprintf(f, "\n");
+        }fclose(f);}
     sprintf(p, "%s/o3.txt", file);
     f = fopen(p, "w");
-    if(f != NULL)
-    {
-        for(uint i = 0; i < 128; i++)
-        {
+    if(f != NULL){
+        for(uint i = 0; i < 128; i++){
             fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
-            for(uint j = 0; j < 7; j++)
-            {
+            for(uint j = 0; j < 7; j++){
                 fprintf(f, "Y(%u): ", j);
                 for(uint k = 0; k < 7; k++)
                     fprintf(f, "%.2f ", net->o3[i][j][k]);
                 fprintf(f, "\n");
-            }
-            fprintf(f, "\n");
-        }
-        fclose(f);
-    }
-
-    ///
-
+            }fprintf(f, "\n");
+        }fclose(f);}
     sprintf(p, "%s/e1.txt", file);
     f = fopen(p, "w");
-    if(f != NULL)
-    {
-        for(uint i = 0; i < 32; i++)
-        {
+    if(f != NULL){
+        for(uint i = 0; i < 32; i++){
             fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
-            for(uint j = 0; j < 28; j++)
-            {
+            for(uint j = 0; j < 28; j++){
                 fprintf(f, "Y(%u): ", j);
                 for(uint k = 0; k < 28; k++)
                     fprintf(f, "%.2f ", net->e1[i][j][k]);
                 fprintf(f, "\n");
-            }
-            fprintf(f, "\n");
-        }
-        fclose(f);
-    }
-
-    ///
-
+            }fprintf(f, "\n");
+        }fclose(f);}
     sprintf(p, "%s/e2.txt", file);
     f = fopen(p, "w");
-    if(f != NULL)
-    {
-        for(uint i = 0; i < 64; i++)
-        {
+    if(f != NULL){
+        for(uint i = 0; i < 64; i++){
             fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
-            for(uint j = 0; j < 14; j++)
-            {
+            for(uint j = 0; j < 14; j++){
                 fprintf(f, "Y(%u): ", j);
                 for(uint k = 0; k < 14; k++)
                     fprintf(f, "%.2f ", net->e2[i][j][k]);
                 fprintf(f, "\n");
-            }
-            fprintf(f, "\n");
-        }
-        fclose(f);
-    }
-
-    ///
-
+            }fprintf(f, "\n");
+        }fclose(f);}
     sprintf(p, "%s/e3.txt", file);
     f = fopen(p, "w");
-    if(f != NULL)
-    {
-        for(uint i = 0; i < 128; i++)
-        {
+    if(f != NULL){
+        for(uint i = 0; i < 128; i++){
             fprintf(f, "~~~~~~~~~~~~~~N(%u):\n", i);
-            for(uint j = 0; j < 7; j++)
-            {
+            for(uint j = 0; j < 7; j++){
                 fprintf(f, "Y(%u): ", j);
                 for(uint k = 0; k < 7; k++)
                     fprintf(f, "%.2f ", net->e3[i][j][k]);
                 fprintf(f, "\n");
-            }
-            fprintf(f, "\n");
-        }
-        fclose(f);
-    }
-
+            }fprintf(f, "\n");
+        }fclose(f);}
 }
 
 static inline float TBVGG3_RELU(const float x)
@@ -402,12 +326,12 @@ static inline float TBVGG3_SIGMOID_D(const float x)
     return x * (1 - x);
 }
 
-static inline float TBVGG3_SGD(TBVGG3_Network* net, const float input, const float error)
+static inline float TBVGG3_SGD(const float input, const float error)
 {
     return LEARNING_RATE * error * input;
 }
 
-static inline float TBVGG3_NAG(TBVGG3_Network* net, const float input, const float error, float* momentum)
+static inline float TBVGG3_NAG(const float input, const float error, float* momentum)
 {
     const float v = NAG_MOMENTUM * momentum[0] + ( LEARNING_RATE * error * input );
     const float n = v + NAG_MOMENTUM * (v - momentum[0]);
@@ -441,7 +365,7 @@ void TBVGG3_Reset(TBVGG3_Network* net)
     // Weight Init
 
     //l1f
-    float d = sqrt(2.0 / 32);
+    float d = sqrt(2.0 / 35);
     for(uint i = 0; i < 32; i++)
         for(uint j = 0; j < 3; j++)
             for(uint k = 0; k < 9; k++)
@@ -466,9 +390,13 @@ void TBVGG3_Reset(TBVGG3_Network* net)
     memset(net->l2fm, 0, sizeof(net->l2fm));
     memset(net->l3fm, 0, sizeof(net->l3fm));
 
-    memset(net->l1fb, 0, sizeof(net->l1fm));
-    memset(net->l2fb, 0, sizeof(net->l2fm));
-    memset(net->l3fb, 0, sizeof(net->l3fm));
+    // memset(net->l1fb, 0, sizeof(net->l1fb));
+    // memset(net->l2fb, 0, sizeof(net->l2fb));
+    // memset(net->l3fb, 0, sizeof(net->l3fb));
+
+    // memset(net->l1fbm, 0, sizeof(net->l1fbm));
+    // memset(net->l2fbm, 0, sizeof(net->l2fbm));
+    // memset(net->l3fbm, 0, sizeof(net->l3fbm));
 
     // zero buffers
     memset(net->p1, 0, sizeof(net->p1));
@@ -625,10 +553,60 @@ float TBVGG3_3x3Conv(const uint depth, const uint wh, const float input[depth][w
     }
 
     // bias
-    ro += filter_bias[0];
+    //ro += filter_bias[0];
 
     // return output
     return TBVGG3_RELU(ro);
+}
+
+void TBVGG3_3x3ConvB(const uint depth, const uint wh, const float input[depth][wh][wh], const float error[depth][wh][wh], const uint y, const uint x, float filter[depth][9], float filter_momentum[depth][9], const float* filter_bias, const float* filter_bias_momentum)
+{
+    // backprop version
+    sint nx = 0, ny = 0;
+    for(uint i = 0; i < depth; i++)
+    {
+        // lower row
+        nx = x-1, ny = y-1;
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
+            filter[i][0] += TBVGG3_NAG(input[i][ny][nx], error[i][y][x], &filter_momentum[i][0]);
+            
+        nx = x,   ny = y-1;
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
+            filter[i][1] += TBVGG3_NAG(input[i][ny][nx], error[i][y][x], &filter_momentum[i][1]);
+
+        nx = x+1, ny = y-1;
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
+            filter[i][2] += TBVGG3_NAG(input[i][ny][nx], error[i][y][x], &filter_momentum[i][2]);
+
+        // middle row
+        nx = x-1, ny = y;
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
+            filter[i][3] += TBVGG3_NAG(input[i][ny][nx], error[i][y][x], &filter_momentum[i][3]);
+
+        nx = x,   ny = y;
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
+            filter[i][4] += TBVGG3_NAG(input[i][ny][nx], error[i][y][x], &filter_momentum[i][4]);
+
+        nx = x+1, ny = y;
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
+            filter[i][5] += TBVGG3_NAG(input[i][ny][nx], error[i][y][x], &filter_momentum[i][5]);
+
+        // top row
+        nx = x-1, ny = y+1;
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
+            filter[i][6] += TBVGG3_NAG(input[i][ny][nx], error[i][y][x], &filter_momentum[i][6]);
+
+        nx = x,   ny = y+1;
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
+            filter[i][7] += TBVGG3_NAG(input[i][ny][nx], error[i][y][x], &filter_momentum[i][7]);
+
+        nx = x+1, ny = y+1;
+        if(TBVGG3_CheckPadded(nx, ny, wh) == 0)
+            filter[i][8] += TBVGG3_NAG(input[i][ny][nx], error[i][y][x], &filter_momentum[i][8]);
+    }
+
+    // bias
+    //filter_bias[0] += TBVGG3_NAG(1, error[i][y][x], filter_bias_momentum[0]);
 }
 
 float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TBVGG3_LEARNTYPE learn)
@@ -642,7 +620,7 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
         {
             for(uint k = 0; k < 28; k++) // width
             {
-                net->o1[i][j][k] = TBVGG3_3x3Conv(3, 28, input, j, k, net->l1f[i], net->l1fb[i]);
+                net->o1[i][j][k] = TBVGG3_3x3Conv(3, 28, input, j, k, net->l1f[i], NULL); //net->l1fb[i]);
             }
         }
     }
@@ -657,7 +635,7 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
         {
             for(uint k = 0; k < 14; k++) // width
             {
-                net->o2[i][j][k] = TBVGG3_3x3Conv(32, 14, net->p1, j, k, net->l2f[i], net->l2fb[i]);
+                net->o2[i][j][k] = TBVGG3_3x3Conv(32, 14, net->p1, j, k, net->l2f[i], NULL); // net->l2fb[i]);
             }
         }
     }
@@ -672,7 +650,7 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
         {
             for(uint k = 0; k < 7; k++) // width
             {
-                net->o3[i][j][k] = TBVGG3_3x3Conv(64, 7, net->p2, j, k, net->l3f[i], net->l3fb[i]);
+                net->o3[i][j][k] = TBVGG3_3x3Conv(64, 7, net->p2, j, k, net->l3f[i], NULL); // net->l3fb[i]);
             }
         }
     }
@@ -688,13 +666,97 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
     }
 
     // average final activation
-    float rv = 0;
+    float output = 0;
     for(uint i = 0; i < 128; i++)
-        rv += gap[i];
-    rv /= 128;
+        output += gap[i];
+    output /= 128;
+
+    output = TBVGG3_SIGMOID(output);
+
+    // return activation else backprop
+    if(learn == NO_LEARN)
+    {
+        return output;
+    }
+    else
+    {
+        // error/gradient slope scaled by derivative
+        const float g0 = TBVGG3_SIGMOID_D(output) * (learn - output);
+
+        // ********** Gradient Back Pass **********
+
+        // layer 3
+        float l3er = 0;
+        for(uint i = 0; i < 128; i++) // num filter
+        {
+            for(uint j = 0; j < 7; j++) // height
+            {
+                for(uint k = 0; k < 7; k++) // width
+                {
+                    // set error
+                    net->e3[i][j][k] = TBVGG3_RELU_D(net->o3[i][j][k]) * g0;
+
+                    // every output error gradient for every filter weight :: per filter
+                    for(uint d = 0; d < 128; d++) // depth
+                        for(uint w = 0; w < 9; w++) // weight
+                            l3er += net->l3f[i][d][w] * net->e3[i][j][k];
+                    //l3er += net->l3fb[i][0] * net->e3[i][0];
+                }
+            }
+        }
+
+        // layer 2
+        float l2er = 0;
+        for(uint i = 0; i < 64; i++) // num filter
+        {
+            for(uint j = 0; j < 14; j++) // height
+            {
+                for(uint k = 0; k < 14; k++) // width
+                {
+                    // set error
+                    net->e2[i][j][k] = TBVGG3_RELU_D(net->o2[i][j][k]) * l3er;
+
+                    // every output error gradient for every filter weight :: per filter
+                    for(uint d = 0; d < 32; d++) // depth
+                        for(uint w = 0; w < 9; w++) // weight
+                            l2er += net->l2f[i][d][w] * net->e2[i][j][k];
+                    //l2er += net->l2fb[i][0] * net->e2[i][0];
+                }
+            }
+        }
+
+        // layer 1
+        for(uint i = 0; i < 32; i++) // num filter
+            for(uint j = 0; j < 28; j++) // height
+                for(uint k = 0; k < 28; k++) // width
+                    net->e1[i][j][k] = TBVGG3_RELU_D(net->o1[i][j][k]) * l2er; // set error
+
+
+        // ********** Weight Nudge Forward Pass **********
+        
+        // convolve filter 1 with layer 1 error gradients
+        for(uint i = 0; i < 32; i++) // num filter
+            for(uint j = 0; j < 28; j++) // height
+                for(uint k = 0; k < 28; k++) // width
+                    TBVGG3_3x3ConvB(3, 28, input, net->e1, j, k, net->l1f[i], net->l1fm[i], NULL, NULL);
+
+        // convolve filter 2 with layer 2 error gradients
+        for(uint i = 0; i < 64; i++) // num filter
+            for(uint j = 0; j < 14; j++) // height
+                for(uint k = 0; k < 14; k++) // width
+                    TBVGG3_3x3ConvB(32, 14, net->o1, net->e2, j, k, net->l2f[i], net->l2fm[i], NULL, NULL);
+
+        // convolve filter 3 with layer 3 error gradients
+        for(uint i = 0; i < 128; i++) // num filter
+            for(uint j = 0; j < 7; j++) // height
+                for(uint k = 0; k < 7; k++) // width
+                    TBVGG3_3x3ConvB(64, 7, net->o2, net->e3, j, k, net->l3f[i], net->l3fm[i], NULL, NULL);
+        
+        // weights nudged
+    }
 
     // return activation
-    return rv;
+    return output;
 }
 
 #endif
