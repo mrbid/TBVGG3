@@ -93,6 +93,7 @@
 #define uint unsigned int
 #define sint int
 #define LEARNING_RATE 0.01
+#define GAIN          0.0065
 #define NAG_MOMENTUM  0.1
 
 /*
@@ -694,7 +695,7 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
                 for(uint k = 0; k < 7; k++) // width
                 {
                     // set error
-                    net->e3[i][j][k] = LEARNING_RATE * TBVGG3_RELU_D(net->o3[i][j][k]) * g0;
+                    net->e3[i][j][k] = GAIN * TBVGG3_RELU_D(net->o3[i][j][k]) * g0;
 
                     // every output error gradient for every filter weight :: per filter
                     for(uint d = 0; d < 64; d++) // depth
@@ -714,7 +715,7 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
                 for(uint k = 0; k < 14; k++) // width
                 {
                     // set error
-                    net->e2[i][j][k] = LEARNING_RATE * TBVGG3_RELU_D(net->o2[i][j][k]) * l3er;
+                    net->e2[i][j][k] = GAIN * TBVGG3_RELU_D(net->o2[i][j][k]) * l3er;
 
                     // every output error gradient for every filter weight :: per filter
                     for(uint d = 0; d < 32; d++) // depth
@@ -729,7 +730,7 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
         for(uint i = 0; i < 32; i++) // num filter
             for(uint j = 0; j < 28; j++) // height
                 for(uint k = 0; k < 28; k++) // width
-                    net->e1[i][j][k] = LEARNING_RATE * TBVGG3_RELU_D(net->o1[i][j][k]) * l2er; // set error
+                    net->e1[i][j][k] = GAIN * TBVGG3_RELU_D(net->o1[i][j][k]) * l2er; // set error
 
         // ********** Weight Nudge Forward Pass **********
         
