@@ -298,7 +298,7 @@ void TBVGG3_Dump(TBVGG3_Network* net, const char* file)
             for(uint j = 0; j < 7; j++){
                 fprintf(f, "Y(%u): ", j);
                 for(uint k = 0; k < 7; k++)
-                    fprintf(f, "%.2f ", net->e3[i][j][k]);
+                    fprintf(f, "%f ", net->e3[i][j][k]);
                 fprintf(f, "\n");
             }fprintf(f, "\n");
         }fclose(f);}
@@ -717,7 +717,7 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
                     net->e2[i][j][k] = TBVGG3_RELU_D(net->o2[i][j][k]) * l3er;
 
                     // every output error gradient for every filter weight :: per filter
-                    for(uint d = 0; d < 32; d++) // depth
+                    for(uint d = 0; d < 64; d++) // depth
                         for(uint w = 0; w < 9; w++) // weight
                             l2er += net->l2f[i][d][w] * net->e2[i][j][k];
                     //l2er += net->l2fb[i][0] * net->e2[i][0];
@@ -730,7 +730,6 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
             for(uint j = 0; j < 28; j++) // height
                 for(uint k = 0; k < 28; k++) // width
                     net->e1[i][j][k] = TBVGG3_RELU_D(net->o1[i][j][k]) * l2er; // set error
-
 
         // ********** Weight Nudge Forward Pass **********
         
