@@ -26,7 +26,7 @@
 #define uint unsigned int
 #define SCAN_AREA 28
 #define ACTIVATION_SENITIVITY 0.90
-#define FIRE_RATE_LIMIT_MS 3000
+#define FIRE_RATE_LIMIT_MS 800
 
 const uint r0 = SCAN_AREA;  // dimensions of sample image square
 const uint r2 = r0*r0;      // total pixels in square
@@ -212,7 +212,8 @@ void sigint_handler(int sig_num)
         printf("\nPlease Wait while the network state is saved...\n\n");
         m_qe = 1;
 
-        TBVGG3_SaveNetwork(&net, "weights");
+        TBVGG3_SaveNetwork(&net, "weights.dat");
+        TBVGG3_Dump(&net, "dump");
         exit(0);
     }
 }
@@ -229,6 +230,7 @@ int main(int argc, char *argv[])
     printf("T = Toggle auto-shoot\n");
     printf("P = Toggle crosshair\n");
     printf("C = Output input array from reticule area.\n");
+    printf("M = Reset Network.\n");
     printf("G = Get activation for reticule area.\n");
     printf("Q = Train on reticule area.\n");
     printf("E = Un-Train on reticule area.\n");
@@ -408,6 +410,16 @@ int main(int argc, char *argv[])
                         printf("%.2f ", b[i]);
                     printf("\n\n");
                 }
+
+                // reset network
+                if(key_is_pressed(XK_M))
+                {
+                    TBVGG3_Reset(&net);
+                    printf("!!! NETWORK RESET !!!\n");
+                    usleep(300000);
+                    speakS("reset");
+                }
+
             }
             
             if(autofire == 1) // left mouse trigger on activation
