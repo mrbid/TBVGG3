@@ -89,10 +89,12 @@
 
         It certainly feels like this CNN trains better on image data
         than an FCNN although I do not feel that it is particularly
-        each to train in this real-time manner that I have liad out
+        easy to train in the real-time manner that I originally proposed
         here, I am going to but some more thought into improving the
         real-time training process but for this existing system
-        the only option to improve the training is to fiddle the
+        the only option to improve the training is to variate to order
+        of the objects you train on in real-time as if you where feeding
+        an neural network for offline training and to fiddle the
         `LEARNING_RATE`, `GAIN`, and, `NAG_MOMENTUM` hyperparameters.
 
     Network size:
