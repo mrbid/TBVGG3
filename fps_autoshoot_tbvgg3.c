@@ -21,7 +21,7 @@
 #include <X11/Xutil.h>
 #include <signal.h>
 
-#include "TBVGG3.h"
+#include "TBVGG3_SGD.h"
 
 #define uint unsigned int
 #define SCAN_AREA 28
