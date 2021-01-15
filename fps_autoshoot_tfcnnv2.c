@@ -208,6 +208,7 @@ void sigint_handler(int sig_num)
         m_qe = 1;
 
         saveNetwork(&net, "weights.dat");
+        exportLayers(&net, "export.txt");
         exit(0);
     }
 }
@@ -224,6 +225,7 @@ int main(int argc, char *argv[])
     printf("T = Toggle auto-shoot\n");
     printf("P = Toggle crosshair\n");
     printf("C = Output input array from reticule area.\n");
+    printf("M = Reset Network.\n");
     printf("G = Get activation for reticule area.\n");
     printf("Q = Train on reticule area.\n");
     printf("E = Un-Train on reticule area.\n");
@@ -235,12 +237,13 @@ int main(int argc, char *argv[])
 
     //
 
-    createNetwork(&net, WEIGHT_INIT_NORMAL_GLOROT, r2i, 3, 256, 1);
+    createNetwork(&net, WEIGHT_INIT_NORMAL_GLOROT, r2i, 3, 128, 1);
     setOptimiser(&net, OPTIM_NESTEROV);
     setActivator(&net, ELLIOT);
-    setLearningRate(&net, 0.03);
+    setLearningRate(&net, 0.3);
+    setGain(&net, 0.3);
 
-    setUnitDropout(&net, 0.13);
+    setUnitDropout(&net, 0.3);
     setMomentum(&net, 0.1);
     // setTargetMin(&net, 0.1);
     // setTargetMax(&net, 0.9);
@@ -419,6 +422,16 @@ int main(int argc, char *argv[])
                         printf("%.2f %.2f %.2f :: ", input[i], input[i+1], input[i+2]);
                     printf("\n\n");
                 }
+
+                // reset network
+                if(key_is_pressed(XK_M))
+                {
+                    resetNetwork(&net);
+                    printf("!!! NETWORK RESET !!!\n");
+                    usleep(300000);
+                    speakS("reset");
+                }
+
             }
             
             if(autofire == 1) // left mouse trigger on activation
