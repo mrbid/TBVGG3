@@ -343,6 +343,7 @@ static inline float TBVGG3_RELU_D(const float x)
 
 static inline float TBVGG3_SIGMOID(const float x)
 {
+    //return 1-(1 / exp(x));
     return 1 / (1 + exp(-x));
 }
 
