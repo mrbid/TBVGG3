@@ -99,6 +99,15 @@
         of the objects you train on in real-time as if you where feeding
         an neural network for offline training and to fiddle the
         `LEARNING_RATE`, and, `GAIN` hyperparameters.
+        
+        When a ReLU output is fed into a regular Sigmoid function the
+        output of the ReLU will always be >0 and thus the output of the
+        Sigmoid will always be 0.5 - 1.0, and the Derivative will start
+        at 0.25 and then reduce to 0 as the sigmoid input approaches 1.
+        As such I have provided a suggested modification to the Sigmoid
+        function `1-(1 / exp(x))` which will insure that the output ranges
+        from 0 to 1 and that at derivative will output 0.25 with an input
+        of 0.5.
 
     Network size:
         (3x28x28)+(32x3x9)+(64x32x9)+(128x64x9)+(32x28x28)+
