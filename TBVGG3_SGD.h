@@ -106,7 +106,7 @@
         at 0.25 and then reduce to 0 as the sigmoid input approaches 1.
         As such I have provided a suggested modification to the Sigmoid
         function `1-(1 / exp(x))` which will insure that the output ranges
-        from 0 to 1 and that at derivative will output 0.25 with an input
+        from 0 to 1 and that the derivative will output 0.25 with an input
         of 0.5.
 
     Network size:
