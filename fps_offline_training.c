@@ -16,9 +16,6 @@
     of samples collected for both targets and non-targets,
     you will have to check by dividing the file sizes in
     bytes by 9408.
-    
-    The weights produced by this process can then be loaded
-    by `fps_autoshoot_tbvgg3.c` and used in game.
 
     Compile:
     clang fps_offline_training.c -Ofast -lX11 -lm -o aim
@@ -34,11 +31,11 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include "TBVGG3_NAG.h"
+#include "TBVGG3_SGD.h"
 
 #define uint unsigned int
 #define SCAN_AREA 28
-#define TARGET_SAMPLES 200
+#define TARGET_SAMPLES 300
 
 const uint r0 = SCAN_AREA;  // dimensions of sample image square
 const uint r2 = r0*r0;      // total pixels in square
@@ -161,19 +158,10 @@ int main(int argc, char *argv[])
 
     // train
     printf("\nTraining...\n");
-    uint flip = 0;
     for(uint i = 0; i < TARGET_SAMPLES; i++)
     {
-        if(flip == 0)
-        {
-            TBVGG3_Process(&net, target_samples[i], LEARN_MAX);
-            flip = 1;
-        }
-        else
-        {
-            TBVGG3_Process(&net, nontarget_samples[i], LEARN_MIN);
-            flip = 0;
-        }
+        TBVGG3_Process(&net, target_samples[i], LEARN_MAX);
+        TBVGG3_Process(&net, nontarget_samples[i], LEARN_MIN);
     }
 
     // test rmse
