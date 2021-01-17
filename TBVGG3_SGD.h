@@ -381,6 +381,17 @@ float TBVGG3_NormalRandom() // Box Muller
     return u * sqrt(-2 * log(r) / r);
 }
 
+float TBVGG3_UniformRandom()
+{
+    float pr = 0;
+    while(pr == 0) //never return 0
+    {
+        const float rv2 = ( ( (((float)rand())+1e-7) / (float)RAND_MAX ) * 2 ) - 1;
+        pr = roundf(rv2 * 100) / 100; // two decimals of precision
+    }
+    return pr;
+}
+
 void TBVGG3_Reset(TBVGG3_Network* net)
 {
     if(net == NULL){return;}
