@@ -7,7 +7,7 @@
     using TFCNNv2.h.
 
     Compile:
-    clang aimbot.c -Ofast -lX11 -lm -o aim
+    clang fps_autoshoot_tfcnnv2.c -Ofast -lX11 -lm -o aim
 */
 
 #include <stdio.h>
