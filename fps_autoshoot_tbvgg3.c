@@ -152,18 +152,6 @@ void processScanArea(Window w)
     // free image block
     XFree(img);
 
-
-    /////////////////
-    // 0-1 normalised
-
-    // for(uint i = 0, i2 = 0; i < r2i; i += 3, i2++)
-    // {
-    //     input[i]   = r[i2] / 65535.0;
-    //     input[i+1] = g[i2] / 65535.0;
-    //     input[i+2] = b[i2] / 65535.0;
-    // }
-
-
     /////////////////
     // mean normalised
 
@@ -187,20 +175,6 @@ void processScanArea(Window w)
             }
         }
     }
-
-    /////////////////
-    // -1 to 1 normalised
-
-    // const double rmd = rh-rl;
-    // const double gmd = gh-gl;
-    // const double bmd = bh-bl;
-
-    // for(uint i = 0, i2 = 0; i < r2i; i += 3, i2++)
-    // {
-    //     input[i]   = ((r[i2]-rl)+1e-7) / (rmd+1e-7);
-    //     input[i+1] = ((g[i2]-gl)+1e-7) / (gmd+1e-7);
-    //     input[i+2] = ((b[i2]-bl)+1e-7) / (bmd+1e-7);
-    // }
 }
 
 void sigint_handler(int sig_num) 
