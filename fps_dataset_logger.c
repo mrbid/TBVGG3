@@ -371,7 +371,6 @@ int main(int argc, char *argv[])
                         usleep(300000);
                         printf("CROSSHAIR: ON\n");
                         speakS("cx on");
-                        printf("Don't have this enabled while taking samples, the crosshair will be burned into your training data.");
                     }
                     else
                     {
@@ -379,6 +378,7 @@ int main(int argc, char *argv[])
                         usleep(300000);
                         printf("CROSSHAIR: OFF\n");
                         speakS("cx off");
+                        printf("Don't have this enabled while taking samples, the crosshair will be burned into your training data.\n");
                     }
                 }
             }
