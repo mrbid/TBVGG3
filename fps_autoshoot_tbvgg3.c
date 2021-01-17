@@ -4,7 +4,7 @@
 --------------------------------------------------
     This is an attempt to create a real-time
     trainable autoshoot bot for FPS games
-    using TFCNNv2.h.
+    using TBVGG3_SGD.h.
 
     Compile:
     clang fps_autoshoot_tbvgg3.c -Ofast -lX11 -lm -o aim
