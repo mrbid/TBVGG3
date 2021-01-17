@@ -395,7 +395,6 @@ int main(int argc, char *argv[])
             else if(hotkeys == 1 && key_is_pressed(XK_Q)) // train when pressed
             {
                 saveSample(twin, "target");
-                speakSS("v");
 
                 // draw sample outline
                 XSetForeground(d, gc, 65280);
@@ -403,11 +402,12 @@ int main(int argc, char *argv[])
                 XSetForeground(d, gc, 0);
                 XDrawRectangle(d, event.xbutton.window, gc, x-rd2-2, y-rd2-2, r0+4, r0+4);
                 XFlush(d);
+                
+                speakSS("v");
             }
             else if(hotkeys == 1 && key_is_pressed(XK_E)) // untrain when pressed
             {
                 saveSample(twin, "nontarget");
-                speakSS("t");
 
                 // draw sample outline
                 XSetForeground(d, gc, 16711680);
@@ -415,6 +415,8 @@ int main(int argc, char *argv[])
                 XSetForeground(d, gc, 0);
                 XDrawRectangle(d, event.xbutton.window, gc, x-rd2-2, y-rd2-2, r0+4, r0+4);
                 XFlush(d);
+                
+                speakSS("t");
             }
 
             if(crosshair == 1)
