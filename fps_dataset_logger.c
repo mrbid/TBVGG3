@@ -20,7 +20,7 @@
     speakSS() with usleep(300000);
 
     Compile:
-    clang aimbot.c -Ofast -lX11 -lm -o aim
+    clang fps_dataset_logger.c -Ofast -lX11 -lm -o aim
 */
 
 #include <stdio.h>
