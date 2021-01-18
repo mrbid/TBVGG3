@@ -18,7 +18,7 @@
     bytes by 9408.
 
     Compile:
-    clang fps_offline_training.c -Ofast -lX11 -lm -o aim
+    clang fps_offline_training.c -Ofast -lm -o aim
 */
 
 #include <stdio.h>
@@ -28,8 +28,6 @@
 #include <stdint.h>
 #include <math.h>
 #include <time.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 
 #include "TBVGG3_SGD.h"
 
