@@ -166,14 +166,17 @@ int main(int argc, char *argv[])
 
     // test rmse
     float squaremean = 0;
+    float real = 0;
     for(uint i = 0; i < TARGET_SAMPLES; i++)
     {
         const float r = 1 - TBVGG3_Process(&net, target_samples[i], NO_LEARN);
         squaremean += r*r;
+        real += r;
     }
     squaremean /= TARGET_SAMPLES;
+    real /= TARGET_SAMPLES;
     const float rmse = sqrt(squaremean);
-    printf("RMSE: %f\n", rmse);
+    printf("RMSE: %f %f\n", rmse, real);
 
     // save it !
     TBVGG3_SaveNetwork(&net, "weights.dat");
