@@ -70,7 +70,7 @@
    ~~ Pre-computed weights /
    These go in order from least trained weights to most trained weights.
 */
-float pw[7][20][12] = {{{-0.000678,0.122750,0.877928},
+float pw[7][20][10] = {{{-0.000678,0.122750,0.877928},
 {-0.014211,0.242387,0.769805},
 {0.002608,0.360765,0.638191},
 {-0.002566,0.221006,0.781539},
