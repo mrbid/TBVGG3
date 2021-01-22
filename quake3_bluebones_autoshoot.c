@@ -311,8 +311,8 @@ int main()
     printf("James William Fletcher (james@voxdsp.com)\n\n");
     printf("L-CTRL + L-ALT = Toggle BOT ON/OFF\n");
     printf("R-CTRL + R-ALT = Toggle HOTKEYS ON/OFF\n");
-    printf("1/2 = How Desperate (1: Accurate / 2: Spray & Pray)\n\n");
-    printf("P = Toggle crosshair\n");
+    printf("1/2 = How Desperate (1: Accurate / 2: Spray & Pray)\n");
+    printf("P = Toggle crosshair\n\n");
 
     XColor c[9];
     Display *d;
