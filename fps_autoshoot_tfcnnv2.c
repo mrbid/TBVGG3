@@ -71,22 +71,6 @@ void speakS(const char* text)
         sleep(1);
 }
 
-void speakI(const int i)
-{
-    char s[256];
-    sprintf(s, "/usr/bin/espeak %i", i);
-    if(system(s) <= 0)
-        sleep(1);
-}
-
-void speakF(const double f)
-{
-    char s[256];
-    sprintf(s, "/usr/bin/espeak %.1f", f);
-    if(system(s) <= 0)
-        sleep(1);
-}
-
 Window getWindow(Display d, const int si) // gets child window mouse is over
 {
     XEvent event;
