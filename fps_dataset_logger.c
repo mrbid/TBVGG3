@@ -57,6 +57,7 @@ GC gc = 0;
    ~~ Utils
 */
 //https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
+//https://stackoverflow.com/questions/18281412/check-keypress-in-c-on-linux/52801588
 int key_is_pressed(KeySym ks)
 {
     Display *dpy = XOpenDisplay(":0");
@@ -100,12 +101,8 @@ void speakSS(const char* text)
         sleep(1);
 }
 
-Window getWindow() // gets child window mouse is over
+Window getWindow(Display d, const int si) // gets child window mouse is over
 {
-    Display *d = XOpenDisplay((char *) NULL);
-    if(d == NULL)
-        return 0;
-    int si = XDefaultScreen(d);
     XEvent event;
     memset(&event, 0x00, sizeof(event));
     XQueryPointer(d, RootWindow(d, si), &event.xbutton.root, &event.xbutton.window, &event.xbutton.x_root, &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
@@ -116,7 +113,6 @@ Window getWindow() // gets child window mouse is over
         XQueryPointer(d, event.xbutton.window, &event.xbutton.root, &event.xbutton.subwindow, &event.xbutton.x_root, &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
     }
     const Window ret = event.xbutton.window;
-    XCloseDisplay(d);
     return ret;
 }
 
@@ -296,7 +292,7 @@ int main(int argc, char *argv[])
             if(enable == 0)
             {
                 // open display 0
-                d = XOpenDisplay((char *) NULL);
+                d = XOpenDisplay((char*) NULL);
                 if(d == NULL)
                     continue;
 
@@ -307,7 +303,7 @@ int main(int argc, char *argv[])
                 gc = DefaultGC(d, si);
 
                 // get window
-                twin = getWindow();
+                twin = getWindow(d, si);
 
                 // get center window point (x & y)
                 XWindowAttributes attr;
