@@ -221,14 +221,13 @@ float pw[7][20][10] = {{{-0.000678,0.122750,0.877928},
    ~~ Utils
 */
 //https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
-int key_is_pressed(KeySym ks)
+//https://stackoverflow.com/questions/18281412/check-keypress-in-c-on-linux/52801588
+int key_is_pressed(Display* dpy, KeySym ks)
 {
-    Display *dpy = XOpenDisplay(":0");
     char keys_return[32];
     XQueryKeymap(dpy, keys_return);
     KeyCode kc2 = XKeysymToKeycode(dpy, ks);
     int isPressed = !!(keys_return[kc2 >> 3] & (1 << (kc2 & 7)));
-    XCloseDisplay(dpy);
     return isPressed;
 }
 
@@ -240,12 +239,8 @@ void speakS(const char* text)
         sleep(1);
 }
 
-Window getWindow() // gets child window mouse is over
+Window getWindow(Display* d, const int si) // gets child window mouse is over
 {
-    Display *d = XOpenDisplay((char *) NULL);
-    if(d == NULL)
-        return 0;
-    int si = XDefaultScreen(d);
     XEvent event;
     memset(&event, 0x00, sizeof(event));
     XQueryPointer(d, RootWindow(d, si), &event.xbutton.root, &event.xbutton.window, &event.xbutton.x_root, &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
@@ -256,7 +251,6 @@ Window getWindow() // gets child window mouse is over
         XQueryPointer(d, event.xbutton.window, &event.xbutton.root, &event.xbutton.subwindow, &event.xbutton.x_root, &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
     }
     const Window ret = event.xbutton.window;
-    XCloseDisplay(d);
     return ret;
 }
 
@@ -324,6 +318,20 @@ int main()
     unsigned int crosshair = 0;
     unsigned int hotkeys = 1;
     time_t ct = time(0);
+
+    // open display 0
+    d = XOpenDisplay(":0");
+    if(d == NULL)
+    {
+        printf("Failed to open display\n");
+        return 0;
+    }
+
+    // get default screen
+    si = XDefaultScreen(d);
+
+    // get graphics context
+    gc = DefaultGC(d, si);
     
     while(1)
     {
@@ -331,7 +339,7 @@ int main()
         usleep(1000);
 
         // inputs
-        if(key_is_pressed(XK_Control_L) && key_is_pressed(XK_Alt_L))
+        if(key_is_pressed(d, XK_Control_L) && key_is_pressed(d, XK_Alt_L))
         {
             if(enable == 0)
             {                
@@ -352,19 +360,8 @@ int main()
         // bot on/off
         if(enable == 1)
         {
-            // open display 0
-            d = XOpenDisplay((char *) NULL);
-            if(d == NULL)
-                continue;
-
-            // get default screen
-            si = XDefaultScreen(d);
-
-            // get graphics context
-            gc = DefaultGC(d, si);
-
             // get window
-            twin = getWindow();
+            twin = getWindow(d, si);
 
             // get center window point (x & y)
             XWindowAttributes attr;
@@ -382,7 +379,7 @@ int main()
 
 
             // input toggle
-            if(key_is_pressed(XK_Control_R) && key_is_pressed(XK_Alt_R))
+            if(key_is_pressed(d, XK_Control_R) && key_is_pressed(d, XK_Alt_R))
             {
                 if(hotkeys == 0)
                 {
@@ -403,7 +400,7 @@ int main()
             if(hotkeys == 1)
             {
                 // crosshair toggle
-                if(key_is_pressed(XK_P))
+                if(key_is_pressed(d, XK_P))
                 {
                     if(crosshair == 0)
                     {
@@ -421,7 +418,7 @@ int main()
                     }
                 }
 
-                if(key_is_pressed(XK_1))
+                if(key_is_pressed(d, XK_1))
                 {
                     _probability = 0.7;
                     offset = 3;
@@ -429,7 +426,7 @@ int main()
                     speakS("Confidence");
                 }
 
-                if(key_is_pressed(XK_2))
+                if(key_is_pressed(d, XK_2))
                 {
                     _probability = 0;
                     offset = 0;
@@ -559,14 +556,13 @@ int main()
 
                 XFlush(d);
             }
-
-            XCloseDisplay(d);
         }
 
         //
     }
 
     // done, never gets here in regular execution flow
+    XCloseDisplay(d);
     return 0;
 }
 
