@@ -85,7 +85,7 @@ void speakSS(const char* text)
         sleep(1);
 }
 
-Window getWindow(Display d, const int si) // gets child window mouse is over
+Window getWindow(Display* d, const int si) // gets child window mouse is over
 {
     XEvent event;
     memset(&event, 0x00, sizeof(event));
