@@ -76,9 +76,9 @@
 
     Comments;
         Do I think Bias makes a significant difference? It certainly
-        seems to make the network train faster, it is lot of extra
-        parameters and 'hassle' to add to a network, it did make me
-        think a little as to how best it would be implemented.
+        seems to make the network train faster, it is extra parameters
+        and 'hassle' to add to a network, it did make me think a little
+        as to how best it would be implemented.
 
         When it came to the back propagation I just worked it out
         using the knowledge and intuition I had gained from implementing
@@ -93,7 +93,7 @@
         It certainly feels like this CNN trains better on image data
         than an FCNN although I do not feel that it is particularly
         easy to train in the real-time manner that I originally proposed
-        here, I am going to but some more thought into improving the
+        here, I am going to put some more thought into improving the
         real-time training process but for this existing system
         the only option to improve the training is to variate to order
         of the objects you train on in real-time as if you where feeding
