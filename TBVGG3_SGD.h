@@ -656,7 +656,7 @@ float TBVGG3_Process(TBVGG3_Network* net, const float input[3][28][28], const TB
     // max pool the output
     TBVGG3_2x2MaxPool(64, 14, net->o2, net->p2);
 
-    // convolve output with 64 filters
+    // convolve output with 128 filters
     for(uint i = 0; i < 128; i++) // num filter
     {
         for(uint j = 0; j < 7; j++) // height
