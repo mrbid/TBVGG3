@@ -1,4 +1,5 @@
 # TBVGG3
+## Tiny Binary VGG3
 A simple convnet based on the VGG network, repurposed for auto-trigger in First Person Shooter games. 
 
 `[14/01/21]` - Finished [`TBVGG3_NAG.h`](https://github.com/TFCNN/Projects/blob/main/TBVGG3_NAG.h) & [`TBVGG3_SGD.h`](https://github.com/TFCNN/Projects/blob/main/TBVGG3_SGD.h) a VGG FCN implementation for binary classification.<br>
